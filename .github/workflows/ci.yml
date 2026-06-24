@@ -74,6 +74,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
+          # The check job already lints and typechecks in parallel.
+          NEXT_BUILD_SKIP_CHECKS: "true"
           DATABASE_URL: postgresql://user:pass@localhost:5432/db
           DIRECT_URL: postgresql://user:pass@localhost:5432/db
           NEON_AUTH_BASE_URL: https://example.invalid
