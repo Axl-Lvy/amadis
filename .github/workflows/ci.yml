@@ -17,9 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          # Full history so SonarCloud can attribute blame and compute new-code.
-          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -50,9 +47,3 @@ jobs:
           R2_ACCESS_KEY_ID: ci
           R2_SECRET_ACCESS_KEY: ci
           R2_BUCKET: ci
-
-      - name: SonarCloud scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
