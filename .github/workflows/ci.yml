@@ -1,8 +1,9 @@
 name: CI
 
 on:
+  # Every pull request, whatever its base branch.
   pull_request:
-    branches: [main]
+  # And the main branch itself, so merges are validated too.
   push:
     branches: [main]
 
