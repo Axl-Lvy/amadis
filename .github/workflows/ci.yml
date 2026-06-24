@@ -12,34 +12,110 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Fan out: lint / typecheck / test run in parallel, each restoring the cached
+# install, so wall-clock is the slowest single job rather than their sum.
 jobs:
-  check:
-    name: check
+  lint:
+    name: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      # Restore the whole install. On a hit we skip npm ci (the slowest step).
-      # Key is the lockfile hash, so any dependency change busts it.
-      - name: Cache node_modules
-        id: node-modules
-        uses: actions/cache@v6
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
-      - if: steps.node-modules.outputs.cache-hit != 'true'
-        run: npm ci
-
-      # lint/typecheck/test import the generated Prisma client.
-      - run: npx prisma generate
-
+      - uses: ./.github/actions/setup
       - run: npm run lint
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
       - run: npm run typecheck
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
       - run: npm run test:coverage
+      # Hand the JUnit XML to publish-test-results without that ~11s publish
+      # step sitting on the test -> sonar critical path. Upload even on failure
+      # so failing suites still get reported. Tiny file -> fast upload.
+      - name: Upload test results
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-results
+          path: test-results/junit.xml
+          if-no-files-found: error
+          retention-days: 1
+      # Hand coverage/lcov.info to the sonar job without rerunning the suite.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          if-no-files-found: error
+          retention-days: 1
+
+  # Publish the JUnit results to the PR, in parallel with sonar, so the ~11s it
+  # takes no longer delays the test job (and thus sonar). Reporting only, so it
+  # is intentionally left out of the required `check` gate.
+  publish-test-results:
+    name: publish-test-results
+    needs: test
+    # Report even when the suite failed or the test job errored.
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: test-results
+          path: test-results
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: test-results/junit.xml
+
+  sonar:
+    name: sonar
+    # Only needs the coverage report, not lint/typecheck, so it starts the
+    # moment the test job finishes. No npm install / prisma generate here:
+    # the scanner reads the source tree and lcov directly.
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history so Sonar's blame / new-code detection is accurate.
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        with:
+          name: coverage
+          path: coverage
+      # SONAR_HOST_URL is unset on purpose: the action defaults to SonarCloud.
+      - name: SonarQube scan
+        uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e # v8.2.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # Single aggregate gate: one status check for branch protection to require,
+  # rather than listing every job. Runs even if a dependency failed (always())
+  # and fails unless all of them succeeded.
+  check:
+    name: check
+    if: always()
+    needs: [lint, typecheck, test, sonar]
+    runs-on: ubuntu-latest
+    steps:
+      - if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: |
+          echo "A required job did not succeed."
+          exit 1
 
   # No build job here on purpose: Vercel builds a preview deploy for every PR
   # with the real env and `prisma migrate deploy`, so it is the deploy gate.
-  # Make the Vercel deployment a required status check in branch protection.
+  # Branch protection should require: check, the Sonar quality gate, and the
+  # Vercel deployment.

@@ -1,0 +1,18 @@
+name: PR Conventional Commit Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  validate-pr-title:
+    runs-on: ubuntu-latest
+    # The action adds a conventional-commit type label to the PR (add_label
+    # defaults to true), which needs write access to pull requests.
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Conventional commit check in pull request title
+        uses: ytanikin/pr-conventional-commits@1.5.2
+        with:
+          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","data","dev","ui","build"]'

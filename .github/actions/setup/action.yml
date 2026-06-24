@@ -1,0 +1,28 @@
+name: Setup
+description: Install dependencies (cached) and generate the Prisma client.
+
+# Shared by the lint / typecheck / test jobs so each parallel job is identical.
+# Assumes the repo is already checked out by the calling job.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v6
+      with:
+        node-version: 24
+
+    # Restore the whole install. On a hit we skip npm ci (the slowest step).
+    # Key is the lockfile hash, so any dependency change busts it. Parallel jobs
+    # share this key: first to miss runs npm ci and saves; the rest read it.
+    - name: Cache node_modules
+      id: node-modules
+      uses: actions/cache@v6
+      with:
+        path: node_modules
+        key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+    - if: steps.node-modules.outputs.cache-hit != 'true'
+      run: npm ci
+      shell: bash
+
+    # lint/typecheck/test import the generated Prisma client.
+    - run: npx prisma generate
+      shell: bash

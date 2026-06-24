@@ -17,6 +17,10 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     include: ["**/*.test.{ts,tsx}"],
+    // In CI also emit JUnit XML for the publish-test-results action to post on
+    // the PR. Local runs keep the plain reporter and write no file.
+    reporters: process.env.CI ? ["default", "junit"] : ["default"],
+    outputFile: { junit: "./test-results/junit.xml" },
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
