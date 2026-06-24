@@ -32,3 +32,22 @@ with no embedded tokens. Authenticate per session via `/mcp`. Never commit secre
 
 - No secrets in the repo. Local env goes in `.env*` (gitignored). `.vercel` is gitignored.
 - Package manager: npm.
+
+## Database / Prisma
+
+- Prisma 7 with `@prisma/adapter-neon`. The generated client lives in `generated/prisma` (gitignored, run `prisma generate`).
+- `DATABASE_URL` is the POOLED connection (host has `-pooler`), used by the app at runtime through the `PrismaNeon` adapter.
+- `DIRECT_URL` is the DIRECT connection (no `-pooler`), used by `prisma migrate`. The datasource in `prisma/schema.prisma` points at `DIRECT_URL`.
+- Neon Auth (Better Auth based) owns the `neon_auth` schema (identity table is `neon_auth.user`, plus `session`, `account`, `jwks`, ...). Prisma owns only the public schema and never migrates `neon_auth`.
+- **All data is user-specific. There is no cross-user data.** Every public table (`texte`, `tag`, `annotation`) has an `owner_id` TEXT column = `neon_auth.user.id`, with no foreign key (managed schema). Every query MUST filter `where: { ownerId: session.user.id }`. Tag uniqueness is per-user (`@@unique([ownerId, layer, code])`). To show user names, LEFT JOIN `neon_auth.user` on `owner_id`.
+
+## Neon Auth (Better Auth)
+
+- SDK is `@neondatabase/auth`. Server instance from `@neondatabase/auth/next/server` (`createNeonAuth`), client from `@neondatabase/auth/next` (`createAuthClient`).
+- Env vars: `NEON_AUTH_BASE_URL` (the branch Auth URL, differs per Neon branch) and `NEON_AUTH_COOKIE_SECRET` (32+ char secret for signing the session cookie).
+- Next 16 uses `proxy.ts` at the repo root for middleware, not `middleware.ts`. Export `default auth.middleware({ loginUrl })` and a `config.matcher`.
+- Server components calling `auth.getSession()` must export `dynamic = 'force-dynamic'`.
+
+## Annotation offsets
+
+Annotation spans are **Unicode code-point** offsets into NFC-normalized `Texte.content`. `start` is inclusive, `end` is exclusive. The annotation UI MUST NFC-normalize the text before computing offsets and count code points, not UTF-16 units and not bytes, so offsets stay consistent across client and server. A single word, a word group, and a few letters are all just spans, and overlapping spans are allowed.
