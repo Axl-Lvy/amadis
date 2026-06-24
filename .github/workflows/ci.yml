@@ -12,39 +12,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
-    name: Lint, typecheck, test, build
+  check:
+    name: Lint, typecheck, test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          # Fallback download cache for the cache-miss path (full npm ci).
-          cache: npm
 
-      # Restore the whole install. On a hit we skip npm ci entirely, which is the
-      # slowest step. Key is the lockfile hash, so any dependency change busts it.
+      # Restore the whole install. On a hit we skip npm ci (the slowest step).
+      # Key is the lockfile hash, so any dependency change busts it.
       - name: Cache node_modules
         id: node-modules
         uses: actions/cache@v4
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
-
-      - name: Install dependencies
-        if: steps.node-modules.outputs.cache-hit != 'true'
+      - if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
-      # Generates the Prisma client into generated/prisma (gitignored).
+      # lint/typecheck/test import the generated Prisma client.
       - run: npx prisma generate
 
       - run: npm run lint
-
       - run: npm run typecheck
-
       - run: npm run test:coverage
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Cache node_modules
+        id: node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+      - if: steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - run: npx prisma generate
 
       # Incremental Next build cache. Falls back to the latest cache for this
       # lockfile when the source-hash key misses, so most builds stay warm.
