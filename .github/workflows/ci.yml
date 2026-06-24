@@ -21,9 +21,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          # Fallback download cache for the cache-miss path (full npm ci).
           cache: npm
 
-      - run: npm ci
+      # Restore the whole install. On a hit we skip npm ci entirely, which is the
+      # slowest step. Key is the lockfile hash, so any dependency change busts it.
+      - name: Cache node_modules
+        id: node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci
 
       # Generates the Prisma client into generated/prisma (gitignored).
       - run: npx prisma generate
@@ -33,6 +45,16 @@ jobs:
       - run: npm run typecheck
 
       - run: npm run test:coverage
+
+      # Incremental Next build cache. Falls back to the latest cache for this
+      # lockfile when the source-hash key misses, so most builds stay warm.
+      - name: Cache Next build
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('app/**', 'lib/**', '*.ts', '*.mjs') }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
 
       # Placeholder env: the app reads these at module load. Values are never used
       # to connect during build (pages are dynamic), they only satisfy the reads.
