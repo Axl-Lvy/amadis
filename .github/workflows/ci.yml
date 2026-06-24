@@ -12,33 +12,60 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Fan out: lint / typecheck / test run in parallel, each restoring the cached
+# install, so wall-clock is the slowest single job rather than their sum.
 jobs:
-  check:
-    name: check
+  lint:
+    name: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      # Restore the whole install. On a hit we skip npm ci (the slowest step).
-      # Key is the lockfile hash, so any dependency change busts it.
-      - name: Cache node_modules
-        id: node-modules
-        uses: actions/cache@v6
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
-      - if: steps.node-modules.outputs.cache-hit != 'true'
-        run: npm ci
-
-      # lint/typecheck/test import the generated Prisma client.
-      - run: npx prisma generate
-
+      - uses: ./.github/actions/setup
       - run: npm run lint
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
       - run: npm run typecheck
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
       - run: npm run test:coverage
+      # Hand coverage/lcov.info to the sonar job without rerunning the suite.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          if-no-files-found: error
+
+  sonar:
+    name: sonar
+    # Only needs the coverage report, not lint/typecheck, so it starts the
+    # moment the test job finishes. No npm install / prisma generate here:
+    # the scanner reads the source tree and lcov directly.
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history so Sonar's blame / new-code detection is accurate.
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage
+          path: coverage
+      # SONAR_HOST_URL is unset on purpose: the action defaults to SonarCloud.
+      - name: SonarQube scan
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   # No build job here on purpose: Vercel builds a preview deploy for every PR
   # with the real env and `prisma migrate deploy`, so it is the deploy gate.
