@@ -32,14 +32,14 @@ stack is reproducible end to end.
 
 ## Tech stack
 
-| Layer        | Choice                                                         |
-| ------------ | -------------------------------------------------------------- |
-| Framework    | Next.js (App Router, React, TypeScript, Tailwind)              |
-| Database     | Neon Postgres (EU region), with git-style branching           |
-| ORM          | Prisma 7 + `@prisma/adapter-neon`                              |
-| Auth         | Neon Auth (Better Auth–based)                                  |
-| Scan storage | Cloudflare R2 (S3-compatible), accessed via presigned URLs     |
-| Hosting      | Vercel                                                         |
+| Layer        | Choice                                                     |
+|--------------|------------------------------------------------------------|
+| Framework    | Next.js (App Router, React, TypeScript, Tailwind)          |
+| Database     | Neon Postgres (EU region), with git-style branching        |
+| ORM          | Prisma 7 + `@prisma/adapter-neon`                          |
+| Auth         | Neon Auth (Better Auth–based)                              |
+| Scan storage | Cloudflare R2 (S3-compatible), accessed via presigned URLs |
+| Hosting      | Vercel                                                     |
 
 ## Architecture notes
 
@@ -105,12 +105,12 @@ npm run dev                 # http://localhost:3000
 
 Deployments are driven by Git, with environments mirrored across the three layers:
 
-| Layer       | Development / Preview        | Production            |
-| ----------- | ---------------------------- | --------------------- |
-| Git branch  | feature branches (PRs)       | `main`                |
-| Vercel env  | Preview / Development        | Production            |
-| Neon branch | `development`                | `production`          |
-| R2 bucket   | dev bucket                   | prod bucket           |
+| Layer       | Development / Preview  | Production   |
+|-------------|------------------------|--------------|
+| Git branch  | feature branches (PRs) | `main`       |
+| Vercel env  | Preview / Development  | Production   |
+| Neon branch | `development`          | `production` |
+| R2 bucket   | dev bucket             | prod bucket  |
 
 Pushing a feature branch triggers a Vercel Preview deploy against the `development` Neon
 branch; merging to `main` triggers Production. The production build runs
