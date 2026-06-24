@@ -1,0 +1,145 @@
+"use server";
+
+import { randomUUID } from "node:crypto";
+
+import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { revalidatePath } from "next/cache";
+
+import { codePointLength } from "@/lib/offsets";
+import { prisma } from "@/lib/prisma";
+import { r2, R2_BUCKET } from "@/lib/r2";
+import { requireUserId } from "@/lib/session";
+
+// Confirm the texte exists and belongs to the caller. Returns its content length.
+async function ownedTexte(ownerId: string, texteId: string) {
+  const texte = await prisma.texte.findFirst({
+    where: { id: texteId, ownerId },
+    select: { id: true, content: true },
+  });
+  if (!texte) {
+    throw new Error("Texte not found");
+  }
+  return texte;
+}
+
+// Create a tag for the current user. Uniqueness is per-user on (layer, code).
+export async function createTag(formData: FormData) {
+  const ownerId = await requireUserId();
+  const layer = String(formData.get("layer") ?? "").trim();
+  const code = String(formData.get("code") ?? "").trim();
+  const label = String(formData.get("label") ?? "").trim() || null;
+  const texteId = String(formData.get("texteId") ?? "");
+  if (!layer || !code) {
+    throw new Error("Layer and code are required");
+  }
+
+  await prisma.tag.upsert({
+    where: { ownerId_layer_code: { ownerId, layer, code } },
+    update: { label },
+    create: { ownerId, layer, code, label },
+  });
+
+  revalidatePath(`/textes/${texteId}`);
+}
+
+// Create an annotation over a code-point span. Offsets are validated against the
+// stored NFC content length; overlapping spans are allowed by design.
+export async function createAnnotation(formData: FormData) {
+  const ownerId = await requireUserId();
+  const texteId = String(formData.get("texteId") ?? "");
+  const tagId = String(formData.get("tagId") ?? "");
+  const start = Number(formData.get("start"));
+  const end = Number(formData.get("end"));
+  const note = String(formData.get("note") ?? "").trim() || null;
+
+  const texte = await ownedTexte(ownerId, texteId);
+  const len = codePointLength(texte.content);
+  if (
+    !Number.isInteger(start) ||
+    !Number.isInteger(end) ||
+    start < 0 ||
+    end > len ||
+    start >= end
+  ) {
+    throw new Error("Invalid span");
+  }
+
+  // Confirm the tag is the caller's too (no cross-user tag reference).
+  const tag = await prisma.tag.findFirst({
+    where: { id: tagId, ownerId },
+    select: { id: true },
+  });
+  if (!tag) {
+    throw new Error("Tag not found");
+  }
+
+  await prisma.annotation.create({
+    data: { ownerId, texteId, tagId, start, end, note },
+  });
+
+  revalidatePath(`/textes/${texteId}`);
+}
+
+// Delete one annotation the caller owns.
+export async function deleteAnnotation(formData: FormData) {
+  const ownerId = await requireUserId();
+  const id = String(formData.get("id") ?? "");
+  const texteId = String(formData.get("texteId") ?? "");
+
+  await prisma.annotation.deleteMany({ where: { id, ownerId } });
+
+  revalidatePath(`/textes/${texteId}`);
+}
+
+// Issue a presigned PUT URL so the browser uploads the scan straight to R2.
+// The key is namespaced by owner and texte; bytes never pass through Vercel.
+export async function presignScanUpload(
+  texteId: string,
+  filename: string,
+  contentType: string,
+) {
+  const ownerId = await requireUserId();
+  await ownedTexte(ownerId, texteId);
+
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80);
+  const key = `${ownerId}/${texteId}/${randomUUID()}-${safeName}`;
+
+  const url = await getSignedUrl(
+    r2,
+    new PutObjectCommand({ Bucket: R2_BUCKET, Key: key, ContentType: contentType }),
+    { expiresIn: 300 },
+  );
+
+  return { url, key };
+}
+
+// Record the uploaded scan's key on the texte (after a successful browser PUT).
+export async function attachScan(texteId: string, key: string) {
+  const ownerId = await requireUserId();
+  if (!key.startsWith(`${ownerId}/${texteId}/`)) {
+    throw new Error("Invalid scan key");
+  }
+  await prisma.texte.updateMany({
+    where: { id: texteId, ownerId },
+    data: { scanKey: key },
+  });
+  revalidatePath(`/textes/${texteId}`);
+}
+
+// Presigned GET URL to view a stored scan (owner-checked).
+export async function presignScanView(texteId: string): Promise<string | null> {
+  const ownerId = await requireUserId();
+  const texte = await prisma.texte.findFirst({
+    where: { id: texteId, ownerId },
+    select: { scanKey: true },
+  });
+  if (!texte?.scanKey) {
+    return null;
+  }
+  return getSignedUrl(
+    r2,
+    new GetObjectCommand({ Bucket: R2_BUCKET, Key: texte.scanKey }),
+    { expiresIn: 300 },
+  );
+}

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { signOut } from "@/app/auth/actions";
@@ -35,14 +36,19 @@ export default async function DashboardPage() {
     <main className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <form action={signOut}>
+        <div className="flex items-center gap-3">
+          <Link href="/textes" className="text-sm underline opacity-70">
+            My textes
+          </Link>
+          <form action={signOut}>
           <button
             type="submit"
             className="rounded-md border border-black/15 px-3 py-1.5 text-sm dark:border-white/20"
           >
             Sign out
           </button>
-        </form>
+          </form>
+        </div>
       </div>
 
       <p className="text-sm">
