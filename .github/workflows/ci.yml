@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  # Every pull request, whatever its base branch.
+  pull_request:
+  # And the main branch itself, so merges are validated too.
+  push:
+    branches: [main]
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # Restore the whole install. On a hit we skip npm ci (the slowest step).
+      # Key is the lockfile hash, so any dependency change busts it.
+      - name: Cache node_modules
+        id: node-modules
+        uses: actions/cache@v6
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+      - if: steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # lint/typecheck/test import the generated Prisma client.
+      - run: npx prisma generate
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:coverage
+
+  # No build job here on purpose: Vercel builds a preview deploy for every PR
+  # with the real env and `prisma migrate deploy`, so it is the deploy gate.
+  # Make the Vercel deployment a required status check in branch protection.
