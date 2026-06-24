@@ -38,7 +38,8 @@ with no embedded tokens. Authenticate per session via `/mcp`. Never commit secre
 - Prisma 7 with `@prisma/adapter-neon`. The generated client lives in `generated/prisma` (gitignored, run `prisma generate`).
 - `DATABASE_URL` is the POOLED connection (host has `-pooler`), used by the app at runtime through the `PrismaNeon` adapter.
 - `DIRECT_URL` is the DIRECT connection (no `-pooler`), used by `prisma migrate`. The datasource in `prisma/schema.prisma` points at `DIRECT_URL`.
-- Neon Auth (Better Auth based) owns the `neon_auth` schema (identity table is `neon_auth.user`, plus `session`, `account`, `jwks`, ...). Prisma owns only the public schema and never migrates `neon_auth`. The annotator is referenced by the `neon_auth.user.id` as a plain TEXT column (`annotation.annotator_id`), with no foreign key, joined with a LEFT JOIN because the data is owned by the managed auth service.
+- Neon Auth (Better Auth based) owns the `neon_auth` schema (identity table is `neon_auth.user`, plus `session`, `account`, `jwks`, ...). Prisma owns only the public schema and never migrates `neon_auth`.
+- **All data is user-specific. There is no cross-user data.** Every public table (`texte`, `tag`, `annotation`) has an `owner_id` TEXT column = `neon_auth.user.id`, with no foreign key (managed schema). Every query MUST filter `where: { ownerId: session.user.id }`. Tag uniqueness is per-user (`@@unique([ownerId, layer, code])`). To show user names, LEFT JOIN `neon_auth.user` on `owner_id`.
 
 ## Neon Auth (Better Auth)
 

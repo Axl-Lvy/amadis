@@ -9,6 +9,7 @@ datasource db {
 
 model Texte {
   id          String       @id @default(cuid())
+  ownerId     String       @map("owner_id")
   reference   String
   content     String       @default("")
   source      String?
@@ -16,36 +17,39 @@ model Texte {
   createdAt   DateTime     @default(now()) @map("created_at")
   annotations Annotation[]
 
+  @@index([ownerId])
   @@map("texte")
 }
 
 model Tag {
   id          String       @id @default(cuid())
+  ownerId     String       @map("owner_id")
   layer       String
   code        String
   label       String?
   annotations Annotation[]
 
-  @@unique([layer, code])
+  @@unique([ownerId, layer, code])
+  @@index([ownerId])
   @@index([layer])
   @@map("tag")
 }
 
 model Annotation {
-  id          String   @id @default(cuid())
-  texteId     String   @map("texte_id")
-  start       Int
-  end         Int
-  tagId       String   @map("tag_id")
-  annotatorId String   @map("annotator_id")
-  note        String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  texte       Texte    @relation(fields: [texteId], references: [id], onDelete: Cascade)
-  tag         Tag      @relation(fields: [tagId], references: [id])
+  id        String   @id @default(cuid())
+  ownerId   String   @map("owner_id")
+  texteId   String   @map("texte_id")
+  start     Int
+  end       Int
+  tagId     String   @map("tag_id")
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  texte     Texte    @relation(fields: [texteId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id])
 
+  @@index([ownerId])
   @@index([texteId])
   @@index([tagId])
-  @@index([annotatorId])
   @@index([texteId, start, end])
   @@map("annotation")
 }

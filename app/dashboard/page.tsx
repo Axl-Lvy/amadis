@@ -14,19 +14,21 @@ export default async function DashboardPage() {
     redirect("/auth/sign-in");
   }
 
-  // Public-schema counts (Prisma) plus the managed auth identity table (raw, cross-schema).
+  const ownerId = session.user.id;
+
+  // Per-user counts (every table is owner-scoped) plus the managed auth identity table.
   const [texteCount, tagCount, annotationCount, authUsers] = await Promise.all([
-    prisma.texte.count(),
-    prisma.tag.count(),
-    prisma.annotation.count(),
+    prisma.texte.count({ where: { ownerId } }),
+    prisma.tag.count({ where: { ownerId } }),
+    prisma.annotation.count({ where: { ownerId } }),
     prisma.$queryRaw<{ count: number }[]>`SELECT count(*)::int AS count FROM neon_auth."user"`,
   ]);
 
   const rows: [string, number][] = [
-    ["texte", texteCount],
-    ["tag", tagCount],
-    ["annotation", annotationCount],
-    ["neon_auth.user", authUsers[0]?.count ?? 0],
+    ["texte (mine)", texteCount],
+    ["tag (mine)", tagCount],
+    ["annotation (mine)", annotationCount],
+    ["neon_auth.user (all)", authUsers[0]?.count ?? 0],
   ];
 
   return (
