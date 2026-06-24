@@ -8,8 +8,19 @@ and review those annotations.
 
 ## Status
 
-Infrastructure skeleton only. No application features yet. The current codebase is the
-default `create-next-app` boilerplate (App Router, TypeScript, Tailwind, ESLint).
+A first vertical slice is built on the App Router (TypeScript, Tailwind, ESLint):
+
+- **Auth** — Neon Auth sign-in / sign-up / sign-out (`app/auth/*`), session handler at
+  `app/api/auth/[...path]/route.ts`, route protection via `proxy.ts`, `requireUser()` in
+  `lib/session.ts`.
+- **Textes** — list and create/delete (`app/textes/`), detail view with content and
+  per-user tags (`app/textes/[id]/`).
+- **Annotation** — span annotator over `Texte.content` (`annotator.tsx`), create/delete
+  annotations and create tags (`app/textes/[id]/actions.ts`).
+- **Scans** — upload a scan image to R2 via presigned PUT, attach to a texte, view via
+  presigned GET (`scan-uploader.tsx`, `lib/r2.ts`).
+- **Data** — Prisma 7 + Neon, `Texte` / `Tag` / `Annotation` models, initial migration
+  applied. Every query is owner-scoped.
 
 ## Planned stack
 
