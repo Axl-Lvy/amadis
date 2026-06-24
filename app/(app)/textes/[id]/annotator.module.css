@@ -1,0 +1,410 @@
+/* Spectra annotator — interlinear colour lanes under an Old French folio. */
+
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.paletteLead {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-right: 4px;
+}
+.lyr {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 13px 7px 11px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink-2);
+  transition: border-color 0.16s, box-shadow 0.16s, color 0.16s;
+}
+.lyr:hover {
+  border-color: color-mix(in srgb, var(--c) 55%, var(--line));
+  color: var(--foreground);
+}
+.lyr[aria-pressed="true"] {
+  border-color: var(--c);
+  color: var(--foreground);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent),
+    0 0 18px -8px var(--c);
+}
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 4px;
+  background: var(--c);
+  flex: none;
+  box-shadow: 0 0 8px -2px var(--c);
+}
+.lyrCount {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.lyr[aria-pressed="true"] .lyrCount {
+  color: var(--c);
+}
+
+/* ---------------- work area ---------------- */
+.work {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 24px;
+  align-items: start;
+}
+
+.folio {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 32px 36px 28px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset,
+    0 24px 60px -34px rgba(0, 0, 0, 0.7);
+}
+.folio::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(
+    90deg,
+    var(--hue-1),
+    var(--hue-2),
+    var(--hue-3),
+    var(--hue-4)
+  );
+  opacity: 0.9;
+}
+.eyebrow {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 18px;
+}
+.eyebrow b {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.verse {
+  font-family: var(--font-serif);
+  font-size: clamp(19px, 2.1vw, 25px);
+  color: var(--foreground);
+  margin: 0;
+  white-space: normal;
+  cursor: text;
+}
+.vline {
+  display: block;
+}
+.vline + .vline {
+  margin-top: 2px;
+}
+.ln {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  color: var(--faint);
+  margin-right: 16px;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+  vertical-align: baseline;
+}
+
+/* a word never breaks mid-token; separators flow inline and allow wrapping */
+.word {
+  white-space: nowrap;
+}
+.cp {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+  vertical-align: baseline;
+  border-radius: 3px;
+  transition: background 0.18s, color 0.18s;
+}
+.cp.lit {
+  background: color-mix(in srgb, var(--litc) 22%, transparent);
+  color: var(--foreground);
+}
+.sep {
+  white-space: pre-wrap;
+}
+
+/* interlinear lane bars, drawn in the line's leading below each glyph */
+.bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--c);
+  box-shadow: var(--bar-glow);
+  transition: height 0.16s, box-shadow 0.16s, opacity 0.16s;
+}
+.bar.grow {
+  animation: grow 0.36s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  transform-origin: left center;
+}
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+.bar.lit {
+  height: 6px;
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--c) 40%, transparent),
+    0 0 12px -1px var(--c);
+}
+
+.empty {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.foot {
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+/* ---------------- inspector ---------------- */
+.inspector {
+  position: sticky;
+  top: 92px;
+}
+.inspectorHead {
+  margin: 0 0 12px;
+}
+.chips {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.chip {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 11px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--c);
+  border-radius: 10px;
+  padding: 10px 11px 10px 12px;
+  transition: box-shadow 0.16s, transform 0.16s, background 0.16s;
+}
+.chip:hover,
+.chip.lit {
+  background: var(--surface-2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 16%, transparent),
+    0 0 22px -10px var(--c);
+  transform: translateX(-2px);
+}
+.chipBody {
+  min-width: 0;
+}
+.chipSrc {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--foreground);
+  line-height: 1.25;
+}
+.chipVal {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 16%, transparent);
+  padding: 1px 6px;
+  border-radius: 5px;
+}
+.layerName {
+  color: var(--faint);
+}
+.off {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 9.5px;
+  color: var(--faint);
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.del {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+.chip:hover .del,
+.del:focus-visible {
+  opacity: 1;
+}
+.del:hover {
+  background: color-mix(in srgb, var(--hue-4) 18%, transparent);
+  color: var(--hue-4);
+}
+.emptyInspector {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--muted);
+  font-size: 14px;
+  background: var(--surface);
+  border: 1px dashed var(--line-2);
+  border-radius: 10px;
+  padding: 16px;
+  line-height: 1.6;
+}
+
+/* ---------------- floating inscribe toolbar ---------------- */
+.inscribe {
+  position: absolute;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: min(420px, 90%);
+  background: var(--pop-bg);
+  border: 1px solid var(--pop-line);
+  border-radius: 12px;
+  padding: 7px;
+  box-shadow: 0 18px 46px -12px rgba(0, 0, 0, 0.6);
+}
+.inscribeLayers {
+  display: flex;
+  gap: 2px;
+}
+.lb {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  transition: background 0.14s;
+}
+.lb:hover {
+  background: color-mix(in srgb, var(--pop-fg) 10%, transparent);
+}
+.lb[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--c) 26%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 50%, transparent) inset;
+}
+.sw {
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+  background: var(--c);
+  box-shadow: 0 0 10px -1px var(--c);
+}
+.sep2 {
+  width: 1px;
+  align-self: stretch;
+  background: var(--pop-line);
+  margin: 2px 1px;
+}
+.tagSelect,
+.noteInput {
+  background: color-mix(in srgb, var(--pop-fg) 8%, transparent);
+  border: 1px solid var(--pop-line);
+  color: var(--pop-fg);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-family: inherit;
+  font-size: 12.5px;
+  outline: none;
+}
+.tagSelect {
+  max-width: 150px;
+}
+.tagSelect option {
+  color: #111;
+}
+.noteInput {
+  width: 130px;
+}
+.noteInput::placeholder {
+  color: color-mix(in srgb, var(--pop-fg) 45%, transparent);
+}
+.go {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 13px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: #fff;
+  background: var(--c);
+  box-shadow: 0 0 18px -5px var(--c);
+  transition: filter 0.14s;
+}
+.go:hover {
+  filter: brightness(1.1);
+}
+.go:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.hintInline {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--pop-fg) 70%, transparent);
+  padding: 4px 6px;
+}
+
+@media (max-width: 900px) {
+  .work {
+    grid-template-columns: 1fr;
+  }
+  .inspector {
+    position: static;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar.grow {
+    animation: none !important;
+  }
+}

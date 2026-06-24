@@ -9,43 +9,33 @@ export default function SignInPage() {
   const [state, formAction, isPending] = useActionState(signInWithEmail, null);
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
-        <h1 className="text-2xl font-bold">Sign in</h1>
+    <main className="center-screen">
+      <form action={formAction} className="auth-card">
+        <Link href="/" className="brand">
+          <span className="logo" />
+          <span className="name">amadis</span>
+        </Link>
+        <h1 className="auth-title">Welcome back</h1>
 
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="label">
           Email
-          <input
-            name="email"
-            type="email"
-            required
-            className="rounded-md border border-black/15 px-3 py-2 dark:border-white/20"
-          />
+          <input name="email" type="email" required className="field" />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="label">
           Password
-          <input
-            name="password"
-            type="password"
-            required
-            className="rounded-md border border-black/15 px-3 py-2 dark:border-white/20"
-          />
+          <input name="password" type="password" required className="field" />
         </label>
 
-        {state?.error && <p className="text-sm text-red-500">{state.error}</p>}
+        {state?.error && <p className="error">{state.error}</p>}
 
-        <button
-          type="submit"
-          disabled={isPending}
-          className="rounded-md bg-foreground px-3 py-2 font-medium text-background disabled:opacity-60"
-        >
-          {isPending ? "Signing in..." : "Sign in"}
+        <button type="submit" disabled={isPending} className="btn btn-primary btn-block">
+          {isPending ? "Signing in…" : "Sign in"}
         </button>
 
-        <p className="text-sm">
+        <p className="text-sm muted">
           No account yet?{" "}
-          <Link href="/auth/sign-up" className="underline">
+          <Link href="/auth/sign-up" className="link">
             Create one
           </Link>
         </p>

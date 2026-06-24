@@ -53,11 +53,11 @@ export function ScanUploader({ texteId }: { texteId: string }) {
         type="button"
         onClick={upload}
         disabled={isPending}
-        className="rounded-md bg-black px-3 py-1 text-white disabled:opacity-50 dark:bg-white dark:text-black"
+        className="btn btn-ghost disabled:opacity-50"
       >
         {isPending ? "Uploading…" : "Upload scan"}
       </button>
-      {error && <span className="text-red-600">{error}</span>}
+      {error && <span style={{ color: "var(--hue-4)" }}>{error}</span>}
     </div>
   );
 }
