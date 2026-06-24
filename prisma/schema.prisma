@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Texte {
+  id          String       @id @default(cuid())
+  reference   String
+  content     String       @default("")
+  source      String?
+  scanKey     String?      @map("scan_key")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  annotations Annotation[]
+
+  @@map("texte")
+}
+
+model Tag {
+  id          String       @id @default(cuid())
+  layer       String
+  code        String
+  label       String?
+  annotations Annotation[]
+
+  @@unique([layer, code])
+  @@index([layer])
+  @@map("tag")
+}
+
+model Annotation {
+  id          String   @id @default(cuid())
+  texteId     String   @map("texte_id")
+  start       Int
+  end         Int
+  tagId       String   @map("tag_id")
+  annotatorId String   @map("annotator_id")
+  note        String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  texte       Texte    @relation(fields: [texteId], references: [id], onDelete: Cascade)
+  tag         Tag      @relation(fields: [tagId], references: [id])
+
+  @@index([texteId])
+  @@index([tagId])
+  @@index([annotatorId])
+  @@index([texteId, start, end])
+  @@map("annotation")
+}
