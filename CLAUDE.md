@@ -26,7 +26,6 @@ Configured at project scope in `./.mcp.json` (committed). These are OAuth HTTP e
 with no embedded tokens. Authenticate per session via `/mcp`. Never commit secrets here.
 
 - **neon** — `https://mcp.neon.tech/mcp` — manage Neon Postgres projects and databases
-- **github** — `https://api.githubcopilot.com/mcp/` — repo, issues, and PR operations
 - **vercel** — `https://mcp.vercel.com` — read-only Vercel project and deployment info
 
 ## Conventions
