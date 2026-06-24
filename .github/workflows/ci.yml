@@ -34,26 +34,50 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
-    # publish-test-results needs to write the check run and PR comment.
-    permissions:
-      checks: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: npm run test:coverage
-      # Publish the JUnit results to the PR even when the suite failed.
-      - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+      # Hand the JUnit XML to publish-test-results without that ~11s publish
+      # step sitting on the test -> sonar critical path. Upload even on failure
+      # so failing suites still get reported. Tiny file -> fast upload.
+      - name: Upload test results
+        uses: actions/upload-artifact@v7
         if: always()
         with:
-          files: test-results/junit.xml
+          name: test-results
+          path: test-results/junit.xml
+          if-no-files-found: error
+          retention-days: 1
       # Hand coverage/lcov.info to the sonar job without rerunning the suite.
       - uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage/lcov.info
           if-no-files-found: error
+          retention-days: 1
+
+  # Publish the JUnit results to the PR, in parallel with sonar, so the ~11s it
+  # takes no longer delays the test job (and thus sonar). Reporting only, so it
+  # is intentionally left out of the required `check` gate.
+  publish-test-results:
+    name: publish-test-results
+    needs: test
+    # Report even when the suite failed or the test job errored.
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: test-results
+          path: test-results
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: test-results/junit.xml
 
   sonar:
     name: sonar
