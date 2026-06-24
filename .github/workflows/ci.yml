@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   check:
-    name: Lint, typecheck, test
+    name: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
