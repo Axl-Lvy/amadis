@@ -50,17 +50,18 @@ between the browser's Selection API and the database. This single model expresse
 groups, and sub-word fragments uniformly, and overlapping ranges need no special casing.
 
 **Identity boundary.** User identities live in the Neon Auth–managed `neon_auth` schema.
-The application owns only the `public` schema and never migrates `neon_auth`. Ownership
-columns (`ownerId`, `annotatorId`) store the `neon_auth.user.id` as plain text with **no
-foreign key**, since the identity sync is asynchronous.
+The application owns only the `public` schema and never migrates `neon_auth`. The
+`ownerId` column on every public table stores the `neon_auth.user.id` as plain text with
+**no foreign key**, since the identity sync is asynchronous.
 
 ### Data model
 
 - **Texte** — `reference`, `content` (the transcription that offsets index into),
   `source` metadata, `scanKey` (the R2 object key), `ownerId`.
-- **Tag** — `layer`, `code`, optional `label`, `ownerId`. Unique per `(layer, code)`.
-- **Annotation** — `texteId`, `start`/`end` (code-point offsets), `tagId`,
-  `annotatorId`, optional `note`. Overlaps allowed.
+- **Tag** — `layer`, `code`, optional `label`, `ownerId`. Unique per `(ownerId, layer,
+  code)` — tags are per-user.
+- **Annotation** — `texteId`, `start`/`end` (code-point offsets), `tagId`, `ownerId`,
+  optional `note`. Overlaps allowed.
 
 The schema is intentionally minimal and grows through Prisma migrations (planned:
 tokenisation for word/lemma frequencies, a multi-layer tagset).
