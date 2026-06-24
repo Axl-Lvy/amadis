@@ -34,12 +34,22 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
+    # publish-test-results needs to write the check run and PR comment.
+    permissions:
+      checks: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: npm run test:coverage
+      # Publish the JUnit results to the PR even when the suite failed.
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: test-results/junit.xml
       # Hand coverage/lcov.info to the sonar job without rerunning the suite.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage/lcov.info
@@ -57,13 +67,13 @@ jobs:
         with:
           # Full history so Sonar's blame / new-code detection is accurate.
           fetch-depth: 0
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: coverage
           path: coverage
       # SONAR_HOST_URL is unset on purpose: the action defaults to SonarCloud.
       - name: SonarQube scan
-        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
+        uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e # v8.2.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
