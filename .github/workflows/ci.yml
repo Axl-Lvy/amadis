@@ -16,8 +16,8 @@ jobs:
     name: Lint, typecheck, test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
 
@@ -25,7 +25,7 @@ jobs:
       # Key is the lockfile hash, so any dependency change busts it.
       - name: Cache node_modules
         id: node-modules
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
@@ -43,14 +43,14 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
 
       - name: Cache node_modules
         id: node-modules
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
@@ -62,7 +62,7 @@ jobs:
       # Incremental Next build cache. Falls back to the latest cache for this
       # lockfile when the source-hash key misses, so most builds stay warm.
       - name: Cache Next build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .next/cache
           key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('app/**', 'lib/**', '*.ts', '*.mjs') }}
