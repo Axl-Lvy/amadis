@@ -298,6 +298,9 @@
 .inscribe {
   position: absolute;
   z-index: 40;
+  margin: 0;
+  right: auto;
+  color: var(--pop-fg);
   display: flex;
   align-items: center;
   gap: 6px;

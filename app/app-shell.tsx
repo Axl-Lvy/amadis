@@ -43,10 +43,10 @@ const NAV: NavItem[] = [
 export function AppShell({
   user,
   children,
-}: {
+}: Readonly<{
   user: { name?: string | null; email?: string | null };
   children: React.ReactNode;
-}) {
+}>) {
   const pathname = usePathname() ?? "";
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);

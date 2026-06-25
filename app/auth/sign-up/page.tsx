@@ -18,17 +18,17 @@ export default function SignUpPage() {
         <h1 className="auth-title">Create your account</h1>
 
         <label className="label">
-          Name
+          <span>Name</span>
           <input name="name" type="text" required className="field" />
         </label>
 
         <label className="label">
-          Email
+          <span>Email</span>
           <input name="email" type="email" required className="field" />
         </label>
 
         <label className="label">
-          Password
+          <span>Password</span>
           <input name="password" type="password" required className="field" />
         </label>
 

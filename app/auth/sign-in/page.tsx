@@ -18,12 +18,12 @@ export default function SignInPage() {
         <h1 className="auth-title">Welcome back</h1>
 
         <label className="label">
-          Email
+          <span>Email</span>
           <input name="email" type="email" required className="field" />
         </label>
 
         <label className="label">
-          Password
+          <span>Password</span>
           <input name="password" type="password" required className="field" />
         </label>
 

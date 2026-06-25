@@ -8,7 +8,7 @@ import { auth } from "@/lib/auth/server";
 export const dynamic = "force-dynamic";
 
 // A static specimen of the interlinear idea: a word carries colored layer lanes.
-function Lane({ hue, top }: { hue: number; top: number }) {
+function Lane({ hue, top }: Readonly<{ hue: number; top: number }>) {
   return (
     <span
       className="bar"

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -48,14 +49,14 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const folioRef = useRef<HTMLDivElement>(null);
-  const toolbarRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDialogElement>(null);
 
   // Stable colour per linguistic layer, drawn from the spectrum (--hue-1..6).
   const layers = useMemo(() => {
     const set = new Set<string>();
     tags.forEach((t) => set.add(t.layer));
     annotations.forEach((a) => set.add(a.layer));
-    return [...set].sort();
+    return [...set].sort((a, b) => a.localeCompare(b));
   }, [tags, annotations]);
   const layerVar = (layer: string) =>
     `var(--hue-${((layers.indexOf(layer) + 6) % 6) + 1})`;
@@ -113,32 +114,39 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
     setTagId(first?.id ?? "");
   }
 
-  function onMouseUp() {
-    const sel = window.getSelection();
+  // Selection is mouse-driven, so the handler lives on the folio element via a
+  // listener rather than a JSX handler on a non-interactive <p>.
+  useEffect(() => {
     const folio = folioRef.current;
-    if (!sel || sel.isCollapsed || !folio) return;
-    let min = Infinity;
-    let max = -1;
-    folio.querySelectorAll<HTMLElement>("[data-cp]").forEach((el) => {
-      if (sel.containsNode(el, true)) {
-        const cp = Number(el.dataset.cp);
-        if (cp < min) min = cp;
-        if (cp > max) max = cp;
+    if (!folio) return;
+    const onMouseUp = () => {
+      const sel = globalThis.getSelection();
+      if (!sel || sel.isCollapsed) return;
+      let min = Infinity;
+      let max = -1;
+      folio.querySelectorAll<HTMLElement>("[data-cp]").forEach((el) => {
+        if (sel.containsNode(el, true)) {
+          const cp = Number(el.dataset.cp);
+          if (cp < min) min = cp;
+          if (cp > max) max = cp;
+        }
+      });
+      if (max < 0) return;
+      setPending({ start: min, end: max + 1 });
+      const first = folio.querySelector<HTMLElement>(`[data-cp="${min}"]`);
+      if (first) {
+        const fr = folio.getBoundingClientRect();
+        const r = first.getBoundingClientRect();
+        anchorRef.current = {
+          left: r.left - fr.left,
+          top: r.top - fr.top,
+          bottom: r.bottom - fr.top,
+        };
       }
-    });
-    if (max < 0) return;
-    setPending({ start: min, end: max + 1 });
-    const first = folio.querySelector<HTMLElement>(`[data-cp="${min}"]`);
-    if (first) {
-      const fr = folio.getBoundingClientRect();
-      const r = first.getBoundingClientRect();
-      anchorRef.current = {
-        left: r.left - fr.left,
-        top: r.top - fr.top,
-        bottom: r.bottom - fr.top,
-      };
-    }
-  }
+    };
+    folio.addEventListener("mouseup", onMouseUp);
+    return () => folio.removeEventListener("mouseup", onMouseUp);
+  }, []);
 
   // Clamp the floating toolbar inside the folio once its size is known.
   useLayoutEffect(() => {
@@ -215,6 +223,28 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
     return out;
   }, [cps]);
 
+  function renderCell(i: number, ch: string, wordy: boolean) {
+    if (!wordy) {
+      return (
+        <span key={i} data-cp={i} data-cover={cover[i]}>
+          {ch}
+        </span>
+      );
+    }
+    const here = annotations.filter((a) => a.start <= i && i < a.end);
+    const litTop = [...here].reverse().find((a) => isLit(a.id));
+    const cls = litTop ? `${styles.cp} ${styles.lit}` : styles.cp;
+    const style = litTop
+      ? ({ "--litc": layerVar(litTop.layer) } as Vars)
+      : undefined;
+    return (
+      <span key={i} data-cp={i} data-cover={cover[i]} className={cls} style={style}>
+        {ch}
+        {renderBars(i, here)}
+      </span>
+    );
+  }
+
   function renderLine(items: { i: number; ch: string }[], lineNo: number) {
     const nodes: React.ReactNode[] = [];
     let run: { i: number; ch: string }[] = [];
@@ -223,33 +253,7 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
     const flush = () => {
       if (!run.length) return;
       const wordy = runWordy;
-      const cells = run.map(({ i, ch }) => {
-        if (!wordy) {
-          return (
-            <span key={i} data-cp={i} data-cover={cover[i]}>
-              {ch}
-            </span>
-          );
-        }
-        const here = annotations.filter((a) => a.start <= i && i < a.end);
-        const litTop = [...here].reverse().find((a) => isLit(a.id));
-        const cls = `${styles.cp}${litTop ? ` ${styles.lit}` : ""}`;
-        const style = litTop
-          ? ({ "--litc": layerVar(litTop.layer) } as Vars)
-          : undefined;
-        return (
-          <span
-            key={i}
-            data-cp={i}
-            data-cover={cover[i]}
-            className={cls}
-            style={style}
-          >
-            {ch}
-            {renderBars(i, here)}
-          </span>
-        );
-      });
+      const cells = run.map(({ i, ch }) => renderCell(i, ch, wordy));
       nodes.push(
         runWordy ? (
           <span key={`w${run[0].i}`} className={styles.word}>
@@ -339,7 +343,7 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
           </div>
 
           {hasContent ? (
-            <p className={styles.verse} style={verseStyle} onMouseUp={onMouseUp}>
+            <p className={styles.verse} style={verseStyle}>
               {lines.map((items, idx) => renderLine(items, idx))}
             </p>
           ) : (
@@ -354,10 +358,10 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
           </div>
 
           {pending && (
-            <div
+            <dialog
               ref={toolbarRef}
+              open
               className={styles.inscribe}
-              role="dialog"
               aria-label="Inscribe a gloss"
               style={{
                 left: pos?.left ?? -9999,
@@ -424,7 +428,7 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
                   </button>
                 </>
               )}
-            </div>
+            </dialog>
           )}
         </section>
 
