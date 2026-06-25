@@ -95,6 +95,14 @@ jobs:
         with:
           name: coverage
           path: coverage
+      # Cache the scanner's JRE and JS/TS analyzer bridge so each run skips the
+      # ~tens-of-seconds bootstrap download. Analysis of app/lib itself is small,
+      # so the bootstrap is what dominates the scan step.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.sonar/cache
+          key: sonar-cache-${{ runner.os }}
+          restore-keys: sonar-cache-
       # SONAR_HOST_URL is unset on purpose: the action defaults to SonarCloud.
       - name: SonarQube scan
         uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e # v8.2.0

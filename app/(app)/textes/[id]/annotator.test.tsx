@@ -23,7 +23,7 @@ describe("Annotator rendering", () => {
     expect(spans[1].textContent).toBe("😀");
   });
 
-  it("deepens the cover class where annotations overlap", () => {
+  it("marks deeper coverage where annotations overlap", () => {
     const annotations = [
       { id: "a", start: 0, end: 3, tagId: "tag1", layer: "pos", code: "NOUN", label: null, note: null },
       { id: "b", start: 1, end: 2, tagId: "tag1", layer: "pos", code: "NOUN", label: null, note: null },
@@ -33,21 +33,25 @@ describe("Annotator rendering", () => {
     );
     const spans = container.querySelectorAll<HTMLElement>("[data-cp]");
     // index 0: covered once, index 1: covered twice (overlap), index 2: once.
-    expect(spans[0].className).toContain("bg-yellow-200/70");
-    expect(spans[1].className).toContain("bg-orange-300/70");
-    expect(spans[2].className).toContain("bg-yellow-200/70");
+    expect(spans[0].dataset.cover).toBe("1");
+    expect(spans[1].dataset.cover).toBe("2");
+    expect(spans[2].dataset.cover).toBe("1");
   });
 
-  it("lists annotations with their code-point-sliced text", () => {
+  it("lists annotations with their code-point-sliced text in the apparatus", () => {
     const annotations = [
       { id: "a", start: 1, end: 2, tagId: "tag1", layer: "pos", code: "NOUN", label: null, note: "hi" },
     ];
     render(
       <Annotator texteId="t1" content="a😀b" tags={tags} annotations={annotations} />,
     );
-    expect(screen.getByText("Annotations (1)")).toBeInTheDocument();
-    // The slice [1,2) is the emoji, JSON-quoted in the list.
-    expect(screen.getByText('"😀"')).toBeInTheDocument();
+    // Inspector header carries the live count.
+    expect(screen.getByText(/Apparatus · 1/)).toBeInTheDocument();
+    // The apparatus lists the annotation by its code-point offsets [1, 2).
+    expect(screen.getByText("[1, 2)")).toBeInTheDocument();
+    // The slice [1,2) is the emoji, shown as the gloss source (folio + apparatus).
+    expect(screen.getAllByText("😀").length).toBeGreaterThanOrEqual(1);
+    // The note is shown alongside the tag code.
     expect(screen.getByText(/hi/)).toBeInTheDocument();
   });
 
