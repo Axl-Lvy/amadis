@@ -8,6 +8,7 @@ import {
   useState,
   useTransition,
   type CSSProperties,
+  type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -16,6 +17,10 @@ import { sliceByCodePoint } from "@/lib/offsets";
 
 import { createAnnotation, deleteAnnotation } from "./actions";
 import styles from "./annotator.module.css";
+
+// Rich-text tag renderers for translated messages, kept at module scope so they
+// are not treated as components redefined on every render.
+const richTags = { b: (chunks: ReactNode) => <b>{chunks}</b> };
 
 type Tag = { id: string; layer: string; code: string; label: string | null };
 
@@ -342,7 +347,7 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
       <div className={styles.work}>
         <section className={styles.folio} ref={folioRef}>
           <div className={styles.eyebrow}>
-            {t.rich("folio.eyebrow", { b: (chunks) => <b>{chunks}</b> })}
+            {t.rich("folio.eyebrow", richTags)}
           </div>
 
           {hasContent ? (
