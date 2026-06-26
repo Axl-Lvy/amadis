@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 import { signOut } from "@/app/auth/actions";
@@ -25,6 +26,7 @@ function Lane({ hue, top }: Readonly<{ hue: number; top: number }>) {
 
 export default async function Home() {
   const { data: session } = await auth.getSession();
+  const t = await getTranslations();
 
   return (
     <main className="page">
@@ -38,35 +40,31 @@ export default async function Home() {
           {session?.user ? (
             <>
               <Link href="/dashboard" className="ghost">
-                Dashboard
+                {t("nav.dashboard")}
               </Link>
               <form action={signOut}>
                 <button type="submit" className="ghost">
-                  Sign out
+                  {t("nav.signOut")}
                 </button>
               </form>
             </>
           ) : (
             <Link href="/auth/sign-in" className="ghost">
-              Sign in
+              {t("nav.signIn")}
             </Link>
           )}
         </div>
       </header>
 
       <section className="hero">
-        <p className="eyebrow">Old French · digital philology</p>
-        <h1>Annotate the manuscript, layer by layer.</h1>
-        <p className="lede">
-          amadis is a reading room for Old French texts. Transcribe a folio, attach its
-          scan, then gloss any word or passage across parts of speech, lemmas, morphology
-          and meaning — each layer its own colour, stacked beneath the line.
-        </p>
+        <p className="eyebrow">{t("home.hero.eyebrow")}</p>
+        <h1>{t("home.hero.heading")}</h1>
+        <p className="lede">{t("home.hero.lede")}</p>
 
         <div className="hero-cta">
           {session?.user ? (
             <Link href="/textes" className="btn btn-primary" style={{ textDecoration: "none" }}>
-              Open my textes
+              {t("home.hero.openTextes")}
             </Link>
           ) : (
             <>
@@ -75,14 +73,14 @@ export default async function Home() {
                 className="btn btn-primary"
                 style={{ textDecoration: "none" }}
               >
-                Create an account
+                {t("home.hero.createAccount")}
               </Link>
               <Link
                 href="/auth/sign-in"
                 className="btn btn-ghost"
                 style={{ textDecoration: "none" }}
               >
-                Sign in
+                {t("nav.signIn")}
               </Link>
             </>
           )}

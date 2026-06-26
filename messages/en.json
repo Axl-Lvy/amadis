@@ -3,6 +3,13 @@
     "metadata": {
       "title": "amadis — manuscript annotation",
       "description": "Annotate Old French manuscripts across linguistic layers."
+    },
+    "hero": {
+      "eyebrow": "Old French · digital philology",
+      "heading": "Annotate the manuscript, layer by layer.",
+      "lede": "amadis is a reading room for Old French texts. Transcribe a folio, attach its scan, then gloss any word or passage across parts of speech, lemmas, morphology and meaning — each layer its own colour, stacked beneath the line.",
+      "openTextes": "Open my textes",
+      "createAccount": "Create an account"
     }
   },
   "common": {

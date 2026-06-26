@@ -3,6 +3,13 @@
     "metadata": {
       "title": "amadis — annotation de manuscrits",
       "description": "Annotez des manuscrits en ancien français à travers les couches linguistiques."
+    },
+    "hero": {
+      "eyebrow": "Ancien français · philologie numérique",
+      "heading": "Annotez le manuscrit, couche par couche.",
+      "lede": "amadis est une salle de lecture pour les textes en ancien français. Transcrivez un folio, joignez son scan, puis glosez n'importe quel mot ou passage selon les parties du discours, les lemmes, la morphologie et le sens — chaque couche a sa propre couleur, empilée sous la ligne.",
+      "openTextes": "Ouvrir mes textes",
+      "createAccount": "Créer un compte"
     }
   },
   "common": {
