@@ -1,1 +1,8 @@
-{}
+{
+  "home": {
+    "metadata": {
+      "title": "amadis — manuscript annotation",
+      "description": "Annotate Old French manuscripts across linguistic layers."
+    }
+  }
+}

@@ -1,1 +1,8 @@
-{}
+{
+  "home": {
+    "metadata": {
+      "title": "amadis — annotation de manuscrits",
+      "description": "Annotez des manuscrits en ancien français à travers les couches linguistiques."
+    }
+  }
+}
