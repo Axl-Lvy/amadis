@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { renderWithIntl } from "@/test-utils/intl";
+
 import { Annotator } from "./annotator";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
@@ -15,7 +17,7 @@ describe("Annotator rendering", () => {
   it("renders one span per code point, not per UTF-16 unit", () => {
     // "a😀b" is 3 code points / 4 UTF-16 units. The annotator works in code-point
     // space, so it must emit exactly 3 [data-cp] spans.
-    const { container } = render(
+    const { container } = renderWithIntl(
       <Annotator texteId="t1" content="a😀b" tags={tags} annotations={[]} />,
     );
     const spans = container.querySelectorAll("[data-cp]");
@@ -28,7 +30,7 @@ describe("Annotator rendering", () => {
       { id: "a", start: 0, end: 3, tagId: "tag1", layer: "pos", code: "NOUN", label: null, note: null },
       { id: "b", start: 1, end: 2, tagId: "tag1", layer: "pos", code: "NOUN", label: null, note: null },
     ];
-    const { container } = render(
+    const { container } = renderWithIntl(
       <Annotator texteId="t1" content="abc" tags={tags} annotations={annotations} />,
     );
     const spans = container.querySelectorAll<HTMLElement>("[data-cp]");
@@ -42,7 +44,7 @@ describe("Annotator rendering", () => {
     const annotations = [
       { id: "a", start: 1, end: 2, tagId: "tag1", layer: "pos", code: "NOUN", label: null, note: "hi" },
     ];
-    render(
+    renderWithIntl(
       <Annotator texteId="t1" content="a😀b" tags={tags} annotations={annotations} />,
     );
     // Inspector header carries the live count.
@@ -56,7 +58,7 @@ describe("Annotator rendering", () => {
   });
 
   it("shows the empty-state message when there is no content", () => {
-    render(<Annotator texteId="t1" content="" tags={tags} annotations={[]} />);
+    renderWithIntl(<Annotator texteId="t1" content="" tags={tags} annotations={[]} />);
     expect(screen.getByText(/No transcription yet/)).toBeInTheDocument();
   });
 });

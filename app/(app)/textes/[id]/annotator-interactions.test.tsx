@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { renderWithIntl } from "@/test-utils/intl";
+
 import { Annotator } from "./annotator";
 import { createAnnotation, deleteAnnotation } from "./actions";
 
@@ -36,7 +38,7 @@ function selectCodePoints(container: HTMLElement, cps: number[]) {
 
 describe("Annotator interactions", () => {
   it("opens the inscribe toolbar after a selection and creates an annotation", async () => {
-    const { container } = render(
+    const { container } = renderWithIntl(
       <Annotator texteId="t1" content="abc" tags={tags} annotations={[]} />,
     );
     const folio = container.querySelector("p")!.parentElement!;
@@ -58,7 +60,7 @@ describe("Annotator interactions", () => {
   });
 
   it("does nothing when the selection is collapsed", () => {
-    const { container } = render(
+    const { container } = renderWithIntl(
       <Annotator texteId="t1" content="abc" tags={tags} annotations={[]} />,
     );
     const folio = container.querySelector("p")!.parentElement!;
@@ -72,7 +74,7 @@ describe("Annotator interactions", () => {
   });
 
   it("cancels the toolbar without creating anything", async () => {
-    const { container } = render(
+    const { container } = renderWithIntl(
       <Annotator texteId="t1" content="abc" tags={tags} annotations={[]} />,
     );
     const folio = container.querySelector("p")!.parentElement!;
@@ -86,7 +88,7 @@ describe("Annotator interactions", () => {
   });
 
   it("switches the active layer from the palette", () => {
-    render(<Annotator texteId="t1" content="abc" tags={tags} annotations={[]} />);
+    renderWithIntl(<Annotator texteId="t1" content="abc" tags={tags} annotations={[]} />);
     // Layers are sorted: "pos" is active first.
     const sem = screen.getByRole("button", { name: /sem/ });
     expect(sem).toHaveAttribute("aria-pressed", "false");
@@ -98,7 +100,7 @@ describe("Annotator interactions", () => {
     const annotations = [
       { id: "a1", start: 0, end: 1, tagId: "tag1", layer: "pos", code: "NOUN", label: null, note: null },
     ];
-    render(
+    renderWithIntl(
       <Annotator texteId="t1" content="abc" tags={tags} annotations={annotations} />,
     );
     fireEvent.click(screen.getByRole("button", { name: "Remove gloss" }));
@@ -112,7 +114,7 @@ describe("Annotator interactions", () => {
     const annotations = [
       { id: "a1", start: 0, end: 2, tagId: "tag1", layer: "pos", code: "NOUN", label: null, note: null },
     ];
-    const { container } = render(
+    const { container } = renderWithIntl(
       <Annotator texteId="t1" content="abc" tags={tags} annotations={annotations} />,
     );
     // The chip row is the parent of its remove button and carries the hover.

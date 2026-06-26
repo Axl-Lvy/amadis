@@ -100,6 +100,33 @@
       "noAnnotations": "No annotations."
     }
   },
+  "annotator": {
+    "palette": {
+      "title": "Layers",
+      "empty": "None yet — create a tag below."
+    },
+    "folio": {
+      "eyebrow": "<b>Interlinear</b> · select a word or passage to gloss it · hover to trace",
+      "noContent": "No transcription yet. Add content to this texte to annotate it."
+    },
+    "foot": {
+      "convention": "NFC · code-point offsets · [start, end)",
+      "codePoints": "{count, plural, one {# code point} other {# code points}}"
+    },
+    "toolbar": {
+      "ariaLabel": "Inscribe a gloss",
+      "noTagHint": "Create a tag first to gloss.",
+      "tagAriaLabel": "Tag",
+      "noTagOption": "no tag",
+      "notePlaceholder": "note (optional)",
+      "inscribe": "Inscribe"
+    },
+    "inspector": {
+      "title": "Apparatus · {count}",
+      "empty": "No glosses yet. Select text and pick a colour — each annotation lands on its own lane below the line.",
+      "removeGloss": "Remove gloss"
+    }
+  },
   "errors": {
     "signInFailed": "Failed to sign in. Try again.",
     "emailRequired": "Email address must be provided.",

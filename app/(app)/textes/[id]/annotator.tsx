@@ -10,6 +10,7 @@ import {
   type CSSProperties,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { sliceByCodePoint } from "@/lib/offsets";
 
@@ -46,6 +47,8 @@ type Vars = CSSProperties & Record<`--${string}`, string>;
 const isWordy = (ch: string) => /[\p{L}\p{M}'’-]/u.test(ch);
 
 export function Annotator({ texteId, content, tags, annotations }: Props) {
+  const t = useTranslations("annotator");
+  const tc = useTranslations("common");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const folioRef = useRef<HTMLDivElement>(null);
@@ -314,10 +317,10 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
     <div className="flex flex-col gap-4">
       {/* layer palette / legend */}
       <div className={styles.palette}>
-        <span className={styles.paletteLead}>Layers</span>
+        <span className={styles.paletteLead}>{t("palette.title")}</span>
         {layers.length === 0 && (
           <span className="text-sm" style={{ color: "var(--muted)" }}>
-            None yet — create a tag below.
+            {t("palette.empty")}
           </span>
         )}
         {layers.map((layer) => (
@@ -339,7 +342,7 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
       <div className={styles.work}>
         <section className={styles.folio} ref={folioRef}>
           <div className={styles.eyebrow}>
-            <b>Interlinear</b> · select a word or passage to gloss it · hover to trace
+            {t.rich("folio.eyebrow", { b: (chunks) => <b>{chunks}</b> })}
           </div>
 
           {hasContent ? (
@@ -347,14 +350,12 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
               {lines.map((items, idx) => renderLine(items, idx))}
             </p>
           ) : (
-            <p className={styles.empty}>
-              No transcription yet. Add content to this texte to annotate it.
-            </p>
+            <p className={styles.empty}>{t("folio.noContent")}</p>
           )}
 
           <div className={styles.foot}>
-            <span>NFC · code-point offsets · [start, end)</span>
-            <span>{cps.length} code points</span>
+            <span>{t("foot.convention")}</span>
+            <span>{t("foot.codePoints", { count: cps.length })}</span>
           </div>
 
           {pending && (
@@ -362,7 +363,7 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
               ref={toolbarRef}
               open
               className={styles.inscribe}
-              aria-label="Inscribe a gloss"
+              aria-label={t("toolbar.ariaLabel")}
               style={{
                 left: pos?.left ?? -9999,
                 top: pos?.top ?? -9999,
@@ -370,7 +371,7 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
               }}
             >
               {layers.length === 0 ? (
-                <span className={styles.hintInline}>Create a tag first to gloss.</span>
+                <span className={styles.hintInline}>{t("toolbar.noTagHint")}</span>
               ) : (
                 <>
                   <div className={styles.inscribeLayers}>
@@ -393,9 +394,11 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
                     className={styles.tagSelect}
                     value={tagId}
                     onChange={(e) => setTagId(e.target.value)}
-                    aria-label="Tag"
+                    aria-label={t("toolbar.tagAriaLabel")}
                   >
-                    {tagsForLayer.length === 0 && <option value="">no tag</option>}
+                    {tagsForLayer.length === 0 && (
+                      <option value="">{t("toolbar.noTagOption")}</option>
+                    )}
                     {tagsForLayer.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.code}
@@ -407,7 +410,7 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
                     className={styles.noteInput}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="note (optional)"
+                    placeholder={t("toolbar.notePlaceholder")}
                   />
                   <button
                     type="button"
@@ -416,7 +419,7 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
                     disabled={isPending || !tagId}
                     onClick={addAnnotation}
                   >
-                    Inscribe
+                    {t("toolbar.inscribe")}
                   </button>
                   <button
                     type="button"
@@ -424,7 +427,7 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
                     style={{ padding: "8px 11px" }}
                     onClick={closeToolbar}
                   >
-                    Cancel
+                    {tc("cancel")}
                   </button>
                 </>
               )}
@@ -435,14 +438,11 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
         {/* inspector */}
         <aside className={styles.inspector}>
           <p className={`section-label ${styles.inspectorHead}`}>
-            Apparatus · {annotations.length}
+            {t("inspector.title", { count: annotations.length })}
           </p>
           <div className={styles.chips}>
             {sorted.length === 0 && (
-              <div className={styles.emptyInspector}>
-                No glosses yet. Select text and pick a colour — each annotation lands on
-                its own lane below the line.
-              </div>
+              <div className={styles.emptyInspector}>{t("inspector.empty")}</div>
             )}
             {sorted.map((a) => {
               const src = sliceByCodePoint(content, a.start, a.end);
@@ -470,7 +470,7 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
                   <button
                     type="button"
                     className={styles.del}
-                    aria-label="Remove gloss"
+                    aria-label={t("inspector.removeGloss")}
                     disabled={isPending}
                     onClick={() => removeAnnotation(a.id)}
                   >

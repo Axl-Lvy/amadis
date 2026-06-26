@@ -100,6 +100,33 @@
       "noAnnotations": "Aucune annotation."
     }
   },
+  "annotator": {
+    "palette": {
+      "title": "Couches",
+      "empty": "Aucune pour l'instant — créez une étiquette ci-dessous."
+    },
+    "folio": {
+      "eyebrow": "<b>Interlinéaire</b> · sélectionnez un mot ou un passage pour le gloser · survolez pour tracer",
+      "noContent": "Aucune transcription pour l'instant. Ajoutez du contenu à ce texte pour l'annoter."
+    },
+    "foot": {
+      "convention": "NFC · décalages en points de code · [début, fin)",
+      "codePoints": "{count, plural, one {# point de code} other {# points de code}}"
+    },
+    "toolbar": {
+      "ariaLabel": "Inscrire une glose",
+      "noTagHint": "Créez d'abord une étiquette pour gloser.",
+      "tagAriaLabel": "Étiquette",
+      "noTagOption": "aucune étiquette",
+      "notePlaceholder": "note (facultatif)",
+      "inscribe": "Inscrire"
+    },
+    "inspector": {
+      "title": "Apparat · {count}",
+      "empty": "Aucune glose pour l'instant. Sélectionnez du texte et choisissez une couleur — chaque annotation occupe sa propre voie sous la ligne.",
+      "removeGloss": "Supprimer la glose"
+    }
+  },
   "errors": {
     "signInFailed": "Échec de la connexion. Réessayez.",
     "emailRequired": "Une adresse e-mail doit être fournie.",
