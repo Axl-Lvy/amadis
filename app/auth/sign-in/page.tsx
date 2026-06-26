@@ -1,45 +1,29 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 
+import { AuthCard, Field } from "../auth-card";
 import { signInWithEmail } from "./actions";
 
 export default function SignInPage() {
   const [state, formAction, isPending] = useActionState(signInWithEmail, null);
+  const t = useTranslations("auth");
 
   return (
-    <main className="center-screen">
-      <form action={formAction} className="auth-card">
-        <Link href="/" className="brand">
-          <span className="logo" />
-          <span className="name">amadis</span>
-        </Link>
-        <h1 className="auth-title">Welcome back</h1>
-
-        <label className="label">
-          <span>Email</span>
-          <input name="email" type="email" required className="field" />
-        </label>
-
-        <label className="label">
-          <span>Password</span>
-          <input name="password" type="password" required className="field" />
-        </label>
-
-        {state?.error && <p className="error">{state.error}</p>}
-
-        <button type="submit" disabled={isPending} className="btn btn-primary btn-block">
-          {isPending ? "Signing in…" : "Sign in"}
-        </button>
-
-        <p className="text-sm muted">
-          No account yet?{" "}
-          <Link href="/auth/sign-up" className="link">
-            Create one
-          </Link>
-        </p>
-      </form>
-    </main>
+    <AuthCard
+      action={formAction}
+      isPending={isPending}
+      error={state?.error}
+      title={t("signIn.title")}
+      submitLabel={t("signIn.submit")}
+      pendingLabel={t("signIn.submitPending")}
+      footerPrompt={t("signIn.noAccountPrompt")}
+      footerLinkLabel={t("signIn.createOneLink")}
+      footerHref="/auth/sign-up"
+    >
+      <Field label={t("fields.email")} name="email" type="email" />
+      <Field label={t("fields.password")} name="password" type="password" />
+    </AuthCard>
   );
 }

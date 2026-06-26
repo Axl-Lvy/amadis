@@ -1,0 +1,149 @@
+{
+  "home": {
+    "metadata": {
+      "title": "amadis — manuscript annotation",
+      "description": "Annotate Old French manuscripts across linguistic layers."
+    },
+    "hero": {
+      "eyebrow": "Old French · digital philology",
+      "heading": "Annotate the manuscript, layer by layer.",
+      "lede": "amadis is a reading room for Old French texts. Transcribe a folio, attach its scan, then gloss any word or passage across parts of speech, lemmas, morphology and meaning — each layer its own colour, stacked beneath the line.",
+      "openTextes": "Open my textes",
+      "createAccount": "Create an account"
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "defaultUserName": "Scholar",
+    "theme": {
+      "switchToLightAria": "Switch to light theme",
+      "switchToDarkAria": "Switch to dark theme",
+      "switchToLightTitle": "Switch to light",
+      "switchToDarkTitle": "Switch to dark"
+    }
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "textes": "Textes",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "openNavigation": "Open navigation"
+  },
+  "auth": {
+    "signIn": {
+      "title": "Welcome back",
+      "submit": "Sign in",
+      "submitPending": "Signing in…",
+      "noAccountPrompt": "No account yet?",
+      "createOneLink": "Create one"
+    },
+    "signUp": {
+      "title": "Create your account",
+      "submit": "Create account",
+      "submitPending": "Creating account…",
+      "haveAccountPrompt": "Already have an account?",
+      "signInLink": "Sign in"
+    },
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "password": "Password"
+    }
+  },
+  "textes": {
+    "title": "Textes",
+    "corpusCount": "{count, plural, =0 {None in your corpus} one {# in your corpus} other {# in your corpus}}",
+    "newTexte": "New texte",
+    "myTextes": "My textes",
+    "empty": "No textes yet. Create one above to begin.",
+    "form": {
+      "referencePlaceholder": "Reference (e.g. Roland, ms. Oxford f.1r)",
+      "sourcePlaceholder": "Source (optional)",
+      "contentPlaceholder": "Paste a transcription (optional — you can scan first and transcribe later)",
+      "submit": "Create texte"
+    },
+    "list": {
+      "annotationCount": "{count, plural, one {# annotation} other {# annotations}}",
+      "hasScan": " · has scan"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "signedInAs": "Signed in as {name}",
+    "openMyTextes": "Open my textes",
+    "scholarCount": "{count, plural, one {# scholar on amadis · your work is private to you.} other {# scholars on amadis · your work is private to you.}}",
+    "stats": {
+      "textes": "textes",
+      "tags": "tags",
+      "annotations": "annotations"
+    }
+  },
+  "texteDetail": {
+    "allTextes": "All textes",
+    "scan": {
+      "label": "Scan",
+      "alt": "Scan of {reference}",
+      "empty": "No scan uploaded yet."
+    },
+    "tags": {
+      "label": "Tags",
+      "layerPlaceholder": "layer (e.g. pos)",
+      "codePlaceholder": "code (e.g. NOUN)",
+      "labelPlaceholder": "label (optional)",
+      "addButton": "Add tag",
+      "empty": "No tags yet. Create one to start annotating."
+    },
+    "tallies": {
+      "perTag": "Per tag",
+      "perLayer": "Per layer",
+      "noAnnotations": "No annotations."
+    }
+  },
+  "annotator": {
+    "palette": {
+      "title": "Layers",
+      "empty": "None yet — create a tag below."
+    },
+    "folio": {
+      "eyebrow": "<b>Interlinear</b> · select a word or passage to gloss it · hover to trace",
+      "noContent": "No transcription yet. Add content to this texte to annotate it."
+    },
+    "foot": {
+      "convention": "NFC · code-point offsets · [start, end)",
+      "codePoints": "{count, plural, one {# code point} other {# code points}}"
+    },
+    "toolbar": {
+      "ariaLabel": "Inscribe a gloss",
+      "noTagHint": "Create a tag first to gloss.",
+      "tagAriaLabel": "Tag",
+      "noTagOption": "no tag",
+      "notePlaceholder": "note (optional)",
+      "inscribe": "Inscribe"
+    },
+    "inspector": {
+      "title": "Apparatus · {count}",
+      "empty": "No glosses yet. Select text and pick a colour — each annotation lands on its own lane below the line.",
+      "removeGloss": "Remove gloss"
+    }
+  },
+  "scanUploader": {
+    "uploadScan": "Upload scan",
+    "uploading": "Uploading…",
+    "errors": {
+      "uploadFailed": "Upload failed",
+      "uploadFailedStatus": "Upload failed ({status})"
+    }
+  },
+  "errors": {
+    "signInFailed": "Failed to sign in. Try again.",
+    "emailRequired": "Email address must be provided.",
+    "signUpFailed": "Failed to create account",
+    "referenceRequired": "Reference is required",
+    "texteNotFound": "Texte not found",
+    "tagLayerCodeRequired": "Layer and code are required",
+    "invalidSpan": "Invalid span",
+    "tagNotFound": "Tag not found",
+    "invalidScanKey": "Invalid scan key"
+  }
+}

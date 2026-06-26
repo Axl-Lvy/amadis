@@ -1,15 +1,21 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { renderWithIntl } from "@/test-utils/intl";
+
 const pathname = vi.fn(() => "/textes");
-vi.mock("next/navigation", () => ({ usePathname: () => pathname() }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => pathname(),
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
 vi.mock("@/app/auth/actions", () => ({ signOut: vi.fn() }));
+vi.mock("@/app/i18n-actions", () => ({ setLocale: vi.fn() }));
 
 import { AppShell } from "./app-shell";
 
 describe("AppShell", () => {
   it("renders the nav, the user identity and a sign-out control", () => {
-    render(
+    renderWithIntl(
       <AppShell user={{ name: "Marie", email: "marie@example.com" }}>
         <p>page body</p>
       </AppShell>,
@@ -24,7 +30,7 @@ describe("AppShell", () => {
 
   it("marks the active route with aria-current", () => {
     pathname.mockReturnValue("/textes/abc");
-    render(
+    renderWithIntl(
       <AppShell user={{ name: "Marie", email: null }}>
         <span />
       </AppShell>,
@@ -37,7 +43,7 @@ describe("AppShell", () => {
 
   it("falls back to an initial and a default name when identity is sparse", () => {
     pathname.mockReturnValue("/dashboard");
-    render(
+    renderWithIntl(
       <AppShell user={{ name: null, email: null }}>
         <span />
       </AppShell>,
@@ -48,7 +54,7 @@ describe("AppShell", () => {
 
   it("opens and closes the mobile navigation", () => {
     pathname.mockReturnValue("/dashboard");
-    const { container } = render(
+    const { container } = renderWithIntl(
       <AppShell user={{ name: "Marie", email: "marie@example.com" }}>
         <span />
       </AppShell>,
@@ -68,7 +74,7 @@ describe("AppShell", () => {
 
   it("closes the drawer when a nav link is followed", () => {
     pathname.mockReturnValue("/dashboard");
-    const { container } = render(
+    const { container } = renderWithIntl(
       <AppShell user={{ name: "Marie", email: "marie@example.com" }}>
         <span />
       </AppShell>,

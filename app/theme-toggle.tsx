@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 
 // The theme lives on <html data-theme>; the no-flash script in the root layout
@@ -22,6 +23,7 @@ function getServerSnapshot(): "dark" | "light" {
 
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const t = useTranslations("common.theme");
 
   function toggle() {
     const next = theme === "dark" ? "light" : "dark";
@@ -39,8 +41,8 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       className="ghost icon"
-      aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-      title={theme === "dark" ? "Switch to light" : "Switch to dark"}
+      aria-label={theme === "dark" ? t("switchToLightAria") : t("switchToDarkAria")}
+      title={theme === "dark" ? t("switchToLightTitle") : t("switchToDarkTitle")}
     >
       {theme === "dark" ? "☀︎" : "☾"}
     </button>

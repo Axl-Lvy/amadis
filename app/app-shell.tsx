@@ -1,18 +1,25 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { signOut } from "@/app/auth/actions";
+import { LangToggle } from "@/app/lang-toggle";
 import { ThemeToggle } from "@/app/theme-toggle";
 
-type NavItem = { href: string; label: string; icon: React.ReactNode; match: (p: string) => boolean };
+type NavItem = {
+  href: string;
+  labelKey: "dashboard" | "textes";
+  icon: React.ReactNode;
+  match: (p: string) => boolean;
+};
 
 const NAV: NavItem[] = [
   {
     href: "/dashboard",
-    label: "Dashboard",
+    labelKey: "dashboard",
     match: (p) => p === "/dashboard",
     icon: (
       <svg viewBox="0 0 16 16" width="17" height="17" fill="none" aria-hidden="true">
@@ -25,7 +32,7 @@ const NAV: NavItem[] = [
   },
   {
     href: "/textes",
-    label: "Textes",
+    labelKey: "textes",
     match: (p) => p === "/textes" || p.startsWith("/textes/"),
     icon: (
       <svg viewBox="0 0 16 16" width="17" height="17" fill="none" aria-hidden="true">
@@ -48,6 +55,7 @@ export function AppShell({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname() ?? "";
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
@@ -71,7 +79,7 @@ export function AppShell({
               onClick={close}
             >
               <span className="nav-icon">{item.icon}</span>
-              {item.label}
+              {t(`nav.${item.labelKey}`)}
             </Link>
           ))}
         </nav>
@@ -80,15 +88,16 @@ export function AppShell({
           <div className="user">
             <span className="avatar">{initial}</span>
             <span className="user-id">
-              <span className="user-name">{user.name ?? "Scholar"}</span>
+              <span className="user-name">{user.name ?? t("common.defaultUserName")}</span>
               {user.email && <span className="user-email">{user.email}</span>}
             </span>
           </div>
           <div className="foot-actions">
             <ThemeToggle />
+            <LangToggle />
             <form action={signOut} style={{ flex: 1 }}>
               <button type="submit" className="ghost" style={{ width: "100%", justifyContent: "center" }}>
-                Sign out
+                {t("nav.signOut")}
               </button>
             </form>
           </div>
@@ -102,7 +111,7 @@ export function AppShell({
           <button
             type="button"
             className="ghost icon"
-            aria-label="Open navigation"
+            aria-label={t("nav.openNavigation")}
             aria-expanded={open}
             onClick={() => setOpen(true)}
           >
@@ -115,6 +124,7 @@ export function AppShell({
             <span className="name">amadis</span>
           </Link>
           <ThemeToggle />
+          <LangToggle />
         </header>
 
         <div className="shell-content">{children}</div>

@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 import { codePointLength } from "@/lib/offsets";
 import { prisma } from "@/lib/prisma";
@@ -18,7 +19,8 @@ async function ownedTexte(ownerId: string, texteId: string) {
     select: { id: true, content: true },
   });
   if (!texte) {
-    throw new Error("Texte not found");
+    const t = await getTranslations("errors");
+    throw new Error(t("texteNotFound"));
   }
   return texte;
 }
@@ -31,7 +33,8 @@ export async function createTag(formData: FormData) {
   const label = String(formData.get("label") ?? "").trim() || null;
   const texteId = String(formData.get("texteId") ?? "");
   if (!layer || !code) {
-    throw new Error("Layer and code are required");
+    const t = await getTranslations("errors");
+    throw new Error(t("tagLayerCodeRequired"));
   }
 
   await prisma.tag.upsert({
@@ -62,7 +65,8 @@ export async function createAnnotation(formData: FormData) {
     end > len ||
     start >= end
   ) {
-    throw new Error("Invalid span");
+    const t = await getTranslations("errors");
+    throw new Error(t("invalidSpan"));
   }
 
   // Confirm the tag is the caller's too (no cross-user tag reference).
@@ -71,7 +75,8 @@ export async function createAnnotation(formData: FormData) {
     select: { id: true },
   });
   if (!tag) {
-    throw new Error("Tag not found");
+    const t = await getTranslations("errors");
+    throw new Error(t("tagNotFound"));
   }
 
   await prisma.annotation.create({
@@ -118,7 +123,8 @@ export async function presignScanUpload(
 export async function attachScan(texteId: string, key: string) {
   const ownerId = await requireUserId();
   if (!key.startsWith(`${ownerId}/${texteId}/`)) {
-    throw new Error("Invalid scan key");
+    const t = await getTranslations("errors");
+    throw new Error(t("invalidScanKey"));
   }
   await prisma.texte.updateMany({
     where: { id: texteId, ownerId },

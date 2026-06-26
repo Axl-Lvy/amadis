@@ -12,6 +12,14 @@ vi.mock("@/lib/prisma", () => ({ get prisma() { return prisma; } }));
 vi.mock("@/lib/session", () => ({ requireUserId: () => Promise.resolve("owner-1") }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: (url: string) => redirect(url) }));
+vi.mock("next-intl/server", async () => {
+  const en = (await import("@/messages/en.json")).default as Record<string, unknown>;
+  const get = (obj: unknown, path: string): unknown =>
+    path.split(".").reduce<unknown>((o, k) => (o as Record<string, unknown>)?.[k], obj);
+  return {
+    getTranslations: async (ns: string) => (key: string) => get(en, `${ns}.${key}`) as string,
+  };
+});
 
 function form(entries: Record<string, string>): FormData {
   const fd = new FormData();

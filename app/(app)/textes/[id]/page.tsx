@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
@@ -19,6 +20,7 @@ export default async function TextePage({
   const { id } = await params;
   const user = await requireUser();
   const ownerId = user.id;
+  const t = await getTranslations("texteDetail");
 
   const texte = await prisma.texte.findFirst({
     where: { id, ownerId },
@@ -79,7 +81,7 @@ export default async function TextePage({
           {texte.source && <p className="sub">{texte.source}</p>}
         </div>
         <Link href="/textes" className="btn btn-ghost" style={{ textDecoration: "none" }}>
-          All textes
+          {t("allTextes")}
         </Link>
       </div>
 
@@ -99,44 +101,44 @@ export default async function TextePage({
         <div className="grid gap-5 md:grid-cols-2">
           {/* Scan */}
           <section className="card flex flex-col gap-3">
-            <p className="section-label">Scan</p>
+            <p className="section-label">{t("scan.label")}</p>
             {scanUrl ? (
               // Presigned URL rotates, so a plain img avoids next/image caching.
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={scanUrl}
-                alt={`Scan of ${texte.reference}`}
+                alt={t("scan.alt", { reference: texte.reference })}
                 className="max-h-[26rem] w-auto rounded-lg"
                 style={{ border: "1px solid var(--line-2)" }}
               />
             ) : (
-              <p className="text-sm muted">No scan uploaded yet.</p>
+              <p className="text-sm muted">{t("scan.empty")}</p>
             )}
             <ScanUploader texteId={texte.id} />
           </section>
 
           {/* Tags */}
           <section className="card flex flex-col gap-3">
-            <p className="section-label">Tags</p>
+            <p className="section-label">{t("tags.label")}</p>
             <form action={createTag} className="flex flex-wrap items-end gap-2">
               <input type="hidden" name="texteId" value={texte.id} />
-              <input name="layer" required placeholder="layer (e.g. pos)" className="field" />
-              <input name="code" required placeholder="code (e.g. NOUN)" className="field" />
-              <input name="label" placeholder="label (optional)" className="field" />
+              <input name="layer" required placeholder={t("tags.layerPlaceholder")} className="field" />
+              <input name="code" required placeholder={t("tags.codePlaceholder")} className="field" />
+              <input name="label" placeholder={t("tags.labelPlaceholder")} className="field" />
               <button type="submit" className="btn btn-primary">
-                Add tag
+                {t("tags.addButton")}
               </button>
             </form>
             <p className="text-xs muted">
               {tags.length === 0
-                ? "No tags yet. Create one to start annotating."
-                : tags.map((t) => `${t.layer}:${t.code}`).join("  ·  ")}
+                ? t("tags.empty")
+                : tags.map((tag) => `${tag.layer}:${tag.code}`).join("  ·  ")}
             </p>
           </section>
 
           {/* Tallies */}
           <section className="card flex flex-col gap-2">
-            <p className="section-label">Per tag</p>
+            <p className="section-label">{t("tallies.perTag")}</p>
             <table className="stat-table">
               <tbody>
                 {tagCounts.map(({ tag, count }) => (
@@ -149,7 +151,7 @@ export default async function TextePage({
                 ))}
                 {tagCounts.length === 0 && (
                   <tr>
-                    <td className="muted">No annotations.</td>
+                    <td className="muted">{t("tallies.noAnnotations")}</td>
                   </tr>
                 )}
               </tbody>
@@ -157,7 +159,7 @@ export default async function TextePage({
           </section>
 
           <section className="card flex flex-col gap-2">
-            <p className="section-label">Per layer</p>
+            <p className="section-label">{t("tallies.perLayer")}</p>
             <table className="stat-table">
               <tbody>
                 {byLayer.map((r) => (
@@ -168,7 +170,7 @@ export default async function TextePage({
                 ))}
                 {byLayer.length === 0 && (
                   <tr>
-                    <td className="muted">No annotations.</td>
+                    <td className="muted">{t("tallies.noAnnotations")}</td>
                   </tr>
                 )}
               </tbody>

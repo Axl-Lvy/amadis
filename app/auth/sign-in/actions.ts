@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/lib/auth/server";
 
@@ -14,7 +15,8 @@ export async function signInWithEmail(
   });
 
   if (error) {
-    return { error: error.message || "Failed to sign in. Try again." };
+    const t = await getTranslations("errors");
+    return { error: error.message || t("signInFailed") };
   }
 
   redirect("/dashboard");

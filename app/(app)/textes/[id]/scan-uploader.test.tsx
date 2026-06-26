@@ -1,5 +1,7 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { renderWithIntl } from "@/test-utils/intl";
 
 import { ScanUploader } from "./scan-uploader";
 import { attachScan, presignScanUpload } from "./actions";
@@ -28,7 +30,7 @@ function pickFile(container: HTMLElement) {
 
 describe("ScanUploader", () => {
   it("does nothing when no file is chosen", () => {
-    render(<ScanUploader texteId="t1" />);
+    renderWithIntl(<ScanUploader texteId="t1" />);
     fireEvent.click(screen.getByRole("button", { name: "Upload scan" }));
     expect(presign).not.toHaveBeenCalled();
   });
@@ -38,7 +40,7 @@ describe("ScanUploader", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal("fetch", fetchMock);
 
-    const { container } = render(<ScanUploader texteId="t1" />);
+    const { container } = renderWithIntl(<ScanUploader texteId="t1" />);
     pickFile(container);
     fireEvent.click(screen.getByRole("button", { name: "Upload scan" }));
 
@@ -55,7 +57,7 @@ describe("ScanUploader", () => {
     presign.mockResolvedValue({ url: "https://r2.example/put", key: "scans/k1" });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
 
-    const { container } = render(<ScanUploader texteId="t1" />);
+    const { container } = renderWithIntl(<ScanUploader texteId="t1" />);
     pickFile(container);
     fireEvent.click(screen.getByRole("button", { name: "Upload scan" }));
 

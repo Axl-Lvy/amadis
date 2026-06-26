@@ -1,50 +1,30 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 
+import { AuthCard, Field } from "../auth-card";
 import { signUpWithEmail } from "./actions";
 
 export default function SignUpPage() {
   const [state, formAction, isPending] = useActionState(signUpWithEmail, null);
+  const t = useTranslations("auth");
 
   return (
-    <main className="center-screen">
-      <form action={formAction} className="auth-card">
-        <Link href="/" className="brand">
-          <span className="logo" />
-          <span className="name">amadis</span>
-        </Link>
-        <h1 className="auth-title">Create your account</h1>
-
-        <label className="label">
-          <span>Name</span>
-          <input name="name" type="text" required className="field" />
-        </label>
-
-        <label className="label">
-          <span>Email</span>
-          <input name="email" type="email" required className="field" />
-        </label>
-
-        <label className="label">
-          <span>Password</span>
-          <input name="password" type="password" required className="field" />
-        </label>
-
-        {state?.error && <p className="error">{state.error}</p>}
-
-        <button type="submit" disabled={isPending} className="btn btn-primary btn-block">
-          {isPending ? "Creating account…" : "Create account"}
-        </button>
-
-        <p className="text-sm muted">
-          Already have an account?{" "}
-          <Link href="/auth/sign-in" className="link">
-            Sign in
-          </Link>
-        </p>
-      </form>
-    </main>
+    <AuthCard
+      action={formAction}
+      isPending={isPending}
+      error={state?.error}
+      title={t("signUp.title")}
+      submitLabel={t("signUp.submit")}
+      pendingLabel={t("signUp.submitPending")}
+      footerPrompt={t("signUp.haveAccountPrompt")}
+      footerLinkLabel={t("signUp.signInLink")}
+      footerHref="/auth/sign-in"
+    >
+      <Field label={t("fields.name")} name="name" type="text" />
+      <Field label={t("fields.email")} name="email" type="email" />
+      <Field label={t("fields.password")} name="password" type="password" />
+    </AuthCard>
   );
 }
