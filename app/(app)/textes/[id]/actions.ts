@@ -7,6 +7,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
+import { getString } from "@/lib/forms";
 import { codePointLength } from "@/lib/offsets";
 import { prisma } from "@/lib/prisma";
 import { r2, R2_BUCKET } from "@/lib/r2";
@@ -28,10 +29,10 @@ async function ownedTexte(ownerId: string, texteId: string) {
 // Create a tag for the current user. Uniqueness is per-user on (layer, code).
 export async function createTag(formData: FormData) {
   const ownerId = await requireUserId();
-  const layer = String(formData.get("layer") ?? "").trim();
-  const code = String(formData.get("code") ?? "").trim();
-  const label = String(formData.get("label") ?? "").trim() || null;
-  const texteId = String(formData.get("texteId") ?? "");
+  const layer = getString(formData, "layer").trim();
+  const code = getString(formData, "code").trim();
+  const label = getString(formData, "label").trim() || null;
+  const texteId = getString(formData, "texteId");
   if (!layer || !code) {
     const t = await getTranslations("errors");
     throw new Error(t("tagLayerCodeRequired"));
@@ -50,11 +51,11 @@ export async function createTag(formData: FormData) {
 // stored NFC content length; overlapping spans are allowed by design.
 export async function createAnnotation(formData: FormData) {
   const ownerId = await requireUserId();
-  const texteId = String(formData.get("texteId") ?? "");
-  const tagId = String(formData.get("tagId") ?? "");
+  const texteId = getString(formData, "texteId");
+  const tagId = getString(formData, "tagId");
   const start = Number(formData.get("start"));
   const end = Number(formData.get("end"));
-  const note = String(formData.get("note") ?? "").trim() || null;
+  const note = getString(formData, "note").trim() || null;
 
   const texte = await ownedTexte(ownerId, texteId);
   const len = codePointLength(texte.content);
@@ -89,8 +90,8 @@ export async function createAnnotation(formData: FormData) {
 // Delete one annotation the caller owns.
 export async function deleteAnnotation(formData: FormData) {
   const ownerId = await requireUserId();
-  const id = String(formData.get("id") ?? "");
-  const texteId = String(formData.get("texteId") ?? "");
+  const id = getString(formData, "id");
+  const texteId = getString(formData, "texteId");
 
   await prisma.annotation.deleteMany({ where: { id, ownerId } });
 

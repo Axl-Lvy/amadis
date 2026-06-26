@@ -51,7 +51,7 @@ type Vars = CSSProperties & Record<`--${string}`, string>;
 
 const isWordy = (ch: string) => /[\p{L}\p{M}'’-]/u.test(ch);
 
-export function Annotator({ texteId, content, tags, annotations }: Props) {
+export function Annotator({ texteId, content, tags, annotations }: Readonly<Props>) {
   const t = useTranslations("annotator");
   const tc = useTranslations("common");
   const router = useRouter();
@@ -174,7 +174,7 @@ export function Annotator({ texteId, content, tags, annotations }: Props) {
   function closeToolbar() {
     setPending(null);
     setPos(null);
-    window.getSelection()?.removeAllRanges();
+    globalThis.getSelection()?.removeAllRanges();
   }
 
   function addAnnotation() {
