@@ -46,4 +46,6 @@ next-env.d.ts
 
 # editor / tooling
 /.idea
-/.serena
+
+# superpowers planning docs (local only)
+/docs/superpowers/
