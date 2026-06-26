@@ -127,6 +127,14 @@
       "removeGloss": "Supprimer la glose"
     }
   },
+  "scanUploader": {
+    "uploadScan": "Téléverser un scan",
+    "uploading": "Téléversement…",
+    "errors": {
+      "uploadFailed": "Échec du téléversement",
+      "uploadFailedStatus": "Échec du téléversement ({status})"
+    }
+  },
   "errors": {
     "signInFailed": "Échec de la connexion. Réessayez.",
     "emailRequired": "Une adresse e-mail doit être fournie.",

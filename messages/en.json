@@ -127,6 +127,14 @@
       "removeGloss": "Remove gloss"
     }
   },
+  "scanUploader": {
+    "uploadScan": "Upload scan",
+    "uploading": "Uploading…",
+    "errors": {
+      "uploadFailed": "Upload failed",
+      "uploadFailedStatus": "Upload failed ({status})"
+    }
+  },
   "errors": {
     "signInFailed": "Failed to sign in. Try again.",
     "emailRequired": "Email address must be provided.",
