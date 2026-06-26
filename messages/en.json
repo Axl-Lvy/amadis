@@ -29,5 +29,31 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "openNavigation": "Open navigation"
+  },
+  "auth": {
+    "signIn": {
+      "title": "Welcome back",
+      "submit": "Sign in",
+      "submitPending": "Signing in…",
+      "noAccountPrompt": "No account yet?",
+      "createOneLink": "Create one"
+    },
+    "signUp": {
+      "title": "Create your account",
+      "submit": "Create account",
+      "submitPending": "Creating account…",
+      "haveAccountPrompt": "Already have an account?",
+      "signInLink": "Sign in"
+    },
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "password": "Password"
+    }
+  },
+  "errors": {
+    "signInFailed": "Failed to sign in. Try again.",
+    "emailRequired": "Email address must be provided.",
+    "signUpFailed": "Failed to create account"
   }
 }

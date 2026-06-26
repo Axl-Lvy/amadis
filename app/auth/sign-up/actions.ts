@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/lib/auth/server";
 
@@ -8,10 +9,11 @@ export async function signUpWithEmail(
   _prevState: { error: string } | null,
   formData: FormData,
 ) {
+  const t = await getTranslations("errors");
   const email = formData.get("email") as string;
 
   if (!email) {
-    return { error: "Email address must be provided." };
+    return { error: t("emailRequired") };
   }
 
   const { error } = await auth.signUp.email({
@@ -21,7 +23,7 @@ export async function signUpWithEmail(
   });
 
   if (error) {
-    return { error: error.message || "Failed to create account" };
+    return { error: error.message || t("signUpFailed") };
   }
 
   redirect("/dashboard");

@@ -29,5 +29,31 @@
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",
     "openNavigation": "Ouvrir la navigation"
+  },
+  "auth": {
+    "signIn": {
+      "title": "Bon retour",
+      "submit": "Se connecter",
+      "submitPending": "Connexion…",
+      "noAccountPrompt": "Pas encore de compte ?",
+      "createOneLink": "Créez-en un"
+    },
+    "signUp": {
+      "title": "Créez votre compte",
+      "submit": "Créer un compte",
+      "submitPending": "Création du compte…",
+      "haveAccountPrompt": "Vous avez déjà un compte ?",
+      "signInLink": "Se connecter"
+    },
+    "fields": {
+      "name": "Nom",
+      "email": "E-mail",
+      "password": "Mot de passe"
+    }
+  },
+  "errors": {
+    "signInFailed": "Échec de la connexion. Réessayez.",
+    "emailRequired": "Une adresse e-mail doit être fournie.",
+    "signUpFailed": "Échec de la création du compte"
   }
 }
