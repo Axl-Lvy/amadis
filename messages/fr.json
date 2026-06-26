@@ -4,5 +4,23 @@
       "title": "amadis — annotation de manuscrits",
       "description": "Annotez des manuscrits en ancien français à travers les couches linguistiques."
     }
+  },
+  "common": {
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "defaultUserName": "Chercheur",
+    "theme": {
+      "switchToLightAria": "Passer au thème clair",
+      "switchToDarkAria": "Passer au thème sombre",
+      "switchToLightTitle": "Passer au clair",
+      "switchToDarkTitle": "Passer au sombre"
+    }
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "textes": "Textes",
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "openNavigation": "Ouvrir la navigation"
   }
 }

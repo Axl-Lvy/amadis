@@ -1,5 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+
+import { renderWithIntl } from "@/test-utils/intl";
 
 import { ThemeToggle } from "./theme-toggle";
 
@@ -11,7 +13,7 @@ afterEach(() => {
 
 describe("ThemeToggle", () => {
   it("defaults to dark and offers to switch to light", () => {
-    render(<ThemeToggle />);
+    renderWithIntl(<ThemeToggle />);
     const btn = screen.getByRole("button");
     expect(btn).toHaveAttribute("aria-label", "Switch to light theme");
     expect(btn.textContent).toBe("☀︎");
@@ -19,7 +21,7 @@ describe("ThemeToggle", () => {
 
   it("reflects an existing light theme on <html>", () => {
     document.documentElement.dataset.theme = "light";
-    render(<ThemeToggle />);
+    renderWithIntl(<ThemeToggle />);
     expect(screen.getByRole("button")).toHaveAttribute(
       "aria-label",
       "Switch to dark theme",
@@ -27,7 +29,7 @@ describe("ThemeToggle", () => {
   });
 
   it("toggles the theme on <html> and persists it", () => {
-    render(<ThemeToggle />);
+    renderWithIntl(<ThemeToggle />);
     fireEvent.click(screen.getByRole("button"));
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(localStorage.getItem("amadis-theme")).toBe("light");

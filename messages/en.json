@@ -4,5 +4,23 @@
       "title": "amadis — manuscript annotation",
       "description": "Annotate Old French manuscripts across linguistic layers."
     }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "defaultUserName": "Scholar",
+    "theme": {
+      "switchToLightAria": "Switch to light theme",
+      "switchToDarkAria": "Switch to dark theme",
+      "switchToLightTitle": "Switch to light",
+      "switchToDarkTitle": "Switch to dark"
+    }
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "textes": "Textes",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "openNavigation": "Open navigation"
   }
 }
