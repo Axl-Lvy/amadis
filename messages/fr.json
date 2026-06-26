@@ -79,10 +79,36 @@
       "annotations": "annotations"
     }
   },
+  "texteDetail": {
+    "allTextes": "Tous les textes",
+    "scan": {
+      "label": "Scan",
+      "alt": "Scan de {reference}",
+      "empty": "Aucun scan téléversé pour l'instant."
+    },
+    "tags": {
+      "label": "Étiquettes",
+      "layerPlaceholder": "couche (par ex. pos)",
+      "codePlaceholder": "code (par ex. NOUN)",
+      "labelPlaceholder": "libellé (facultatif)",
+      "addButton": "Ajouter une étiquette",
+      "empty": "Aucune étiquette pour l'instant. Créez-en une pour commencer à annoter."
+    },
+    "tallies": {
+      "perTag": "Par étiquette",
+      "perLayer": "Par couche",
+      "noAnnotations": "Aucune annotation."
+    }
+  },
   "errors": {
     "signInFailed": "Échec de la connexion. Réessayez.",
     "emailRequired": "Une adresse e-mail doit être fournie.",
     "signUpFailed": "Échec de la création du compte",
-    "referenceRequired": "La référence est requise"
+    "referenceRequired": "La référence est requise",
+    "texteNotFound": "Texte introuvable",
+    "tagLayerCodeRequired": "La couche et le code sont requis",
+    "invalidSpan": "Plage invalide",
+    "tagNotFound": "Étiquette introuvable",
+    "invalidScanKey": "Clé de scan invalide"
   }
 }

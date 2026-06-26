@@ -79,10 +79,36 @@
       "annotations": "annotations"
     }
   },
+  "texteDetail": {
+    "allTextes": "All textes",
+    "scan": {
+      "label": "Scan",
+      "alt": "Scan of {reference}",
+      "empty": "No scan uploaded yet."
+    },
+    "tags": {
+      "label": "Tags",
+      "layerPlaceholder": "layer (e.g. pos)",
+      "codePlaceholder": "code (e.g. NOUN)",
+      "labelPlaceholder": "label (optional)",
+      "addButton": "Add tag",
+      "empty": "No tags yet. Create one to start annotating."
+    },
+    "tallies": {
+      "perTag": "Per tag",
+      "perLayer": "Per layer",
+      "noAnnotations": "No annotations."
+    }
+  },
   "errors": {
     "signInFailed": "Failed to sign in. Try again.",
     "emailRequired": "Email address must be provided.",
     "signUpFailed": "Failed to create account",
-    "referenceRequired": "Reference is required"
+    "referenceRequired": "Reference is required",
+    "texteNotFound": "Texte not found",
+    "tagLayerCodeRequired": "Layer and code are required",
+    "invalidSpan": "Invalid span",
+    "tagNotFound": "Tag not found",
+    "invalidScanKey": "Invalid scan key"
   }
 }
