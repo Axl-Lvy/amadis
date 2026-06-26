@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { toNFC } from "@/lib/offsets";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +15,8 @@ export async function createTexte(formData: FormData) {
 
   const reference = String(formData.get("reference") ?? "").trim();
   if (!reference) {
-    throw new Error("Reference is required");
+    const t = await getTranslations("errors");
+    throw new Error(t("referenceRequired"));
   }
   const rawContent = String(formData.get("content") ?? "");
   const source = String(formData.get("source") ?? "").trim() || null;

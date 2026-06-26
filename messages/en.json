@@ -51,9 +51,38 @@
       "password": "Password"
     }
   },
+  "textes": {
+    "title": "Textes",
+    "corpusCount": "{count, plural, =0 {None in your corpus} one {# in your corpus} other {# in your corpus}}",
+    "newTexte": "New texte",
+    "myTextes": "My textes",
+    "empty": "No textes yet. Create one above to begin.",
+    "form": {
+      "referencePlaceholder": "Reference (e.g. Roland, ms. Oxford f.1r)",
+      "sourcePlaceholder": "Source (optional)",
+      "contentPlaceholder": "Paste a transcription (optional — you can scan first and transcribe later)",
+      "submit": "Create texte"
+    },
+    "list": {
+      "annotationCount": "{count, plural, one {# annotation} other {# annotations}}",
+      "hasScan": " · has scan"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "signedInAs": "Signed in as {name}",
+    "openMyTextes": "Open my textes",
+    "scholarCount": "{count, plural, one {# scholar on amadis · your work is private to you.} other {# scholars on amadis · your work is private to you.}}",
+    "stats": {
+      "textes": "textes",
+      "tags": "tags",
+      "annotations": "annotations"
+    }
+  },
   "errors": {
     "signInFailed": "Failed to sign in. Try again.",
     "emailRequired": "Email address must be provided.",
-    "signUpFailed": "Failed to create account"
+    "signUpFailed": "Failed to create account",
+    "referenceRequired": "Reference is required"
   }
 }

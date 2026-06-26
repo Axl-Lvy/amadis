@@ -51,9 +51,38 @@
       "password": "Mot de passe"
     }
   },
+  "textes": {
+    "title": "Textes",
+    "corpusCount": "{count, plural, =0 {Aucun dans votre corpus} one {# dans votre corpus} other {# dans votre corpus}}",
+    "newTexte": "Nouveau texte",
+    "myTextes": "Mes textes",
+    "empty": "Aucun texte pour l'instant. Créez-en un ci-dessus pour commencer.",
+    "form": {
+      "referencePlaceholder": "Référence (par ex. Roland, ms. Oxford f.1r)",
+      "sourcePlaceholder": "Source (facultatif)",
+      "contentPlaceholder": "Collez une transcription (facultatif — vous pouvez scanner d'abord et transcrire plus tard)",
+      "submit": "Créer le texte"
+    },
+    "list": {
+      "annotationCount": "{count, plural, one {# annotation} other {# annotations}}",
+      "hasScan": " · scan disponible"
+    }
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "signedInAs": "Connecté en tant que {name}",
+    "openMyTextes": "Ouvrir mes textes",
+    "scholarCount": "{count, plural, one {# chercheur sur amadis · votre travail vous est privé.} other {# chercheurs sur amadis · votre travail vous est privé.}}",
+    "stats": {
+      "textes": "textes",
+      "tags": "étiquettes",
+      "annotations": "annotations"
+    }
+  },
   "errors": {
     "signInFailed": "Échec de la connexion. Réessayez.",
     "emailRequired": "Une adresse e-mail doit être fournie.",
-    "signUpFailed": "Échec de la création du compte"
+    "signUpFailed": "Échec de la création du compte",
+    "referenceRequired": "La référence est requise"
   }
 }

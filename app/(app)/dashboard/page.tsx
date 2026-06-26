@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/lib/auth/server";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +16,7 @@ export default async function DashboardPage() {
   }
 
   const ownerId = session.user.id;
+  const t = await getTranslations("dashboard");
 
   // Per-user counts (every table is owner-scoped) plus the managed auth identity table.
   const [texteCount, tagCount, annotationCount, authUsers] = await Promise.all([
@@ -34,18 +36,18 @@ export default async function DashboardPage() {
     <>
       <div className="content-header">
         <div>
-          <h1>Dashboard</h1>
-          <p className="sub">Signed in as {session.user.name}</p>
+          <h1>{t("title")}</h1>
+          <p className="sub">{t("signedInAs", { name: session.user.name })}</p>
         </div>
         <Link href="/textes" className="btn btn-primary" style={{ textDecoration: "none" }}>
-          Open my textes
+          {t("openMyTextes")}
         </Link>
       </div>
 
       <div className="grid gap-5 sm:grid-cols-3">
         {mine.map(([name, count]) => (
           <section key={name} className="card flex flex-col gap-1">
-            <p className="section-label">{name}</p>
+            <p className="section-label">{t(`stats.${name}`)}</p>
             <span
               style={{
                 fontFamily: "var(--font-serif)",
@@ -61,8 +63,7 @@ export default async function DashboardPage() {
       </div>
 
       <p className="text-xs muted" style={{ marginTop: 20 }}>
-        {authUsers[0]?.count ?? 0} scholar{(authUsers[0]?.count ?? 0) === 1 ? "" : "s"} on
-        amadis · your work is private to you.
+        {t("scholarCount", { count: authUsers[0]?.count ?? 0 })}
       </p>
     </>
   );
