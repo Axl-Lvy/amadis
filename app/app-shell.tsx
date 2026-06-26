@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { signOut } from "@/app/auth/actions";
+import { LangToggle } from "@/app/lang-toggle";
 import { ThemeToggle } from "@/app/theme-toggle";
 
 type NavItem = {
@@ -93,6 +94,7 @@ export function AppShell({
           </div>
           <div className="foot-actions">
             <ThemeToggle />
+            <LangToggle />
             <form action={signOut} style={{ flex: 1 }}>
               <button type="submit" className="ghost" style={{ width: "100%", justifyContent: "center" }}>
                 {t("nav.signOut")}
@@ -122,6 +124,7 @@ export function AppShell({
             <span className="name">amadis</span>
           </Link>
           <ThemeToggle />
+          <LangToggle />
         </header>
 
         <div className="shell-content">{children}</div>

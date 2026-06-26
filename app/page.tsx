@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 import { signOut } from "@/app/auth/actions";
+import { LangToggle } from "@/app/lang-toggle";
 import { ThemeToggle } from "@/app/theme-toggle";
 import { auth } from "@/lib/auth/server";
 
@@ -37,6 +38,7 @@ export default async function Home() {
         </Link>
         <div className="actions">
           <ThemeToggle />
+          <LangToggle />
           {session?.user ? (
             <>
               <Link href="/dashboard" className="ghost">

@@ -4,8 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import { renderWithIntl } from "@/test-utils/intl";
 
 const pathname = vi.fn(() => "/textes");
-vi.mock("next/navigation", () => ({ usePathname: () => pathname() }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => pathname(),
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
 vi.mock("@/app/auth/actions", () => ({ signOut: vi.fn() }));
+vi.mock("@/app/i18n-actions", () => ({ setLocale: vi.fn() }));
 
 import { AppShell } from "./app-shell";
 
