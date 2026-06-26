@@ -9,7 +9,7 @@ describe("codePointLength", () => {
 
   it("counts an astral code point as one, not two UTF-16 units", () => {
     // "😀" is a single code point but String#length (UTF-16) reports 2.
-    expect("😀".length).toBe(2);
+    expect("😀").toHaveLength(2);
     expect(codePointLength("😀")).toBe(1);
   });
 

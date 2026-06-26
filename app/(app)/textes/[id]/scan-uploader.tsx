@@ -8,7 +8,7 @@ import { attachScan, presignScanUpload } from "./actions";
 
 // Upload a scan straight to R2 via a presigned PUT, then record its key.
 // The file bytes go browser -> R2 directly and never pass through Vercel.
-export function ScanUploader({ texteId }: { texteId: string }) {
+export function ScanUploader({ texteId }: Readonly<{ texteId: string }>) {
   const router = useRouter();
   const t = useTranslations("scanUploader");
   const inputRef = useRef<HTMLInputElement>(null);
