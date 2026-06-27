@@ -8,7 +8,13 @@ runs:
   steps:
     - uses: actions/setup-node@v6
       with:
-        node-version: 24
+        node-version-file: .nvmrc
+
+    # Honor the pinned `packageManager` (npm@11.9.0) so CI installs with the
+    # exact npm everyone uses locally. This keeps the lockfile's computed flags
+    # (dev/devOptional/peer) stable instead of churning across npm versions.
+    - run: corepack enable
+      shell: bash
 
     # Restore the whole install. On a hit we skip npm ci (the slowest step).
     # Key is the lockfile hash, so any dependency change busts it. Parallel jobs
