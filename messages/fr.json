@@ -7,14 +7,21 @@
     "hero": {
       "eyebrow": "Ancien français · philologie numérique",
       "heading": "Annotez le manuscrit, couche par couche.",
-      "lede": "amadis est une salle de lecture pour les textes en ancien français. Transcrivez un folio, joignez son scan, puis glosez n'importe quel mot ou passage selon les parties du discours, les lemmes, la morphologie et le sens — chaque couche a sa propre couleur, empilée sous la ligne.",
-      "openTextes": "Ouvrir mes textes",
+      "lede": "amadis est une salle de lecture pour les textes en ancien français. Constituez un livre à partir d'un PDF numérisé, découpez-le en passages, puis posez des placements sur le titre et le texte — chacun portant un arbre d'étiquettes et une description libre.",
+      "openBooks": "Ouvrir mes livres",
       "createAccount": "Créer un compte"
     }
   },
   "common": {
     "cancel": "Annuler",
+    "save": "Enregistrer",
+    "edit": "Modifier",
     "delete": "Supprimer",
+    "remove": "Retirer",
+    "add": "Ajouter",
+    "create": "Créer",
+    "back": "Retour",
+    "loading": "Chargement…",
     "defaultUserName": "Chercheur",
     "theme": {
       "switchToLightAria": "Passer au thème clair",
@@ -25,7 +32,7 @@
   },
   "nav": {
     "dashboard": "Tableau de bord",
-    "textes": "Textes",
+    "books": "Livres",
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",
     "openNavigation": "Ouvrir la navigation"
@@ -51,99 +58,42 @@
       "password": "Mot de passe"
     }
   },
-  "textes": {
-    "title": "Textes",
-    "corpusCount": "{count, plural, =0 {Aucun dans votre corpus} one {# dans votre corpus} other {# dans votre corpus}}",
-    "newTexte": "Nouveau texte",
-    "myTextes": "Mes textes",
-    "empty": "Aucun texte pour l'instant. Créez-en un ci-dessus pour commencer.",
-    "form": {
-      "referencePlaceholder": "Référence (par ex. Roland, ms. Oxford f.1r)",
-      "sourcePlaceholder": "Source (facultatif)",
-      "contentPlaceholder": "Collez une transcription (facultatif — vous pouvez scanner d'abord et transcrire plus tard)",
-      "submit": "Créer le texte"
-    },
-    "list": {
-      "annotationCount": "{count, plural, one {# annotation} other {# annotations}}",
-      "hasScan": " · scan disponible"
-    }
-  },
   "dashboard": {
     "title": "Tableau de bord",
     "signedInAs": "Connecté en tant que {name}",
-    "openMyTextes": "Ouvrir mes textes",
+    "openBooks": "Ouvrir mes livres",
     "scholarCount": "{count, plural, one {# chercheur sur amadis · votre travail vous est privé.} other {# chercheurs sur amadis · votre travail vous est privé.}}",
     "stats": {
-      "textes": "textes",
+      "books": "livres",
+      "passages": "passages",
       "tags": "étiquettes",
-      "annotations": "annotations"
-    }
-  },
-  "texteDetail": {
-    "allTextes": "Tous les textes",
-    "scan": {
-      "label": "Scan",
-      "alt": "Scan de {reference}",
-      "empty": "Aucun scan téléversé pour l'instant."
-    },
-    "tags": {
-      "label": "Étiquettes",
-      "layerPlaceholder": "couche (par ex. pos)",
-      "codePlaceholder": "code (par ex. NOUN)",
-      "labelPlaceholder": "libellé (facultatif)",
-      "addButton": "Ajouter une étiquette",
-      "empty": "Aucune étiquette pour l'instant. Créez-en une pour commencer à annoter."
-    },
-    "tallies": {
-      "perTag": "Par étiquette",
-      "perLayer": "Par couche",
-      "noAnnotations": "Aucune annotation."
-    }
-  },
-  "annotator": {
-    "palette": {
-      "title": "Couches",
-      "empty": "Aucune pour l'instant — créez une étiquette ci-dessous."
-    },
-    "folio": {
-      "eyebrow": "<b>Interlinéaire</b> · sélectionnez un mot ou un passage pour le gloser · survolez pour tracer",
-      "noContent": "Aucune transcription pour l'instant. Ajoutez du contenu à ce texte pour l'annoter."
-    },
-    "foot": {
-      "convention": "NFC · décalages en points de code · [début, fin)",
-      "codePoints": "{count, plural, one {# point de code} other {# points de code}}"
-    },
-    "toolbar": {
-      "ariaLabel": "Inscrire une glose",
-      "noTagHint": "Créez d'abord une étiquette pour gloser.",
-      "tagAriaLabel": "Étiquette",
-      "noTagOption": "aucune étiquette",
-      "notePlaceholder": "note (facultatif)",
-      "inscribe": "Inscrire"
-    },
-    "inspector": {
-      "title": "Apparat · {count}",
-      "empty": "Aucune glose pour l'instant. Sélectionnez du texte et choisissez une couleur — chaque annotation occupe sa propre voie sous la ligne.",
-      "removeGloss": "Supprimer la glose"
-    }
-  },
-  "scanUploader": {
-    "uploadScan": "Téléverser un scan",
-    "uploading": "Téléversement…",
-    "errors": {
-      "uploadFailed": "Échec du téléversement",
-      "uploadFailedStatus": "Échec du téléversement ({status})"
+      "placements": "placements"
     }
   },
   "errors": {
     "signInFailed": "Échec de la connexion. Réessayez.",
     "emailRequired": "Une adresse e-mail doit être fournie.",
     "signUpFailed": "Échec de la création du compte",
-    "referenceRequired": "La référence est requise",
-    "texteNotFound": "Texte introuvable",
-    "tagLayerCodeRequired": "La couche et le code sont requis",
-    "invalidSpan": "Plage invalide",
+    "bookNotFound": "Livre introuvable",
+    "bookTitleRequired": "Un titre de livre est requis",
+    "passageNotFound": "Passage introuvable",
+    "passageNumberInvalid": "Numéro de passage ou région PDF invalide",
     "tagNotFound": "Étiquette introuvable",
-    "invalidScanKey": "Clé de scan invalide"
+    "tagNameRequired": "Un nom d'étiquette est requis",
+    "tagTypeRequired": "Un type est requis pour une étiquette racine",
+    "tagParentInvalid": "Étiquette parente introuvable",
+    "placementNotFound": "Placement introuvable",
+    "invalidField": "Un placement doit viser le titre ou le texte",
+    "invalidSpan": "Plage invalide",
+    "emptyPlacement": "Ajoutez au moins une étiquette ou une description",
+    "variantNotFound": "Version introuvable",
+    "invalidScanKey": "Clé de scan invalide",
+    "invalidPdfKey": "Clé de PDF invalide",
+    "invalidPageCount": "Nombre de pages invalide",
+    "refSourceNotFound": "Source de la référence introuvable",
+    "refTargetNotFound": "Cible de la référence introuvable",
+    "invalidTargetType": "Type de cible de référence invalide",
+    "uploadFailed": "Échec du téléversement",
+    "uploadFailedStatus": "Échec du téléversement ({status})"
   }
 }

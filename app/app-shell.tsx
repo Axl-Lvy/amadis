@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/app/theme-toggle";
 
 type NavItem = {
   href: string;
-  labelKey: "dashboard" | "textes";
+  labelKey: "dashboard" | "books";
   icon: React.ReactNode;
   match: (p: string) => boolean;
 };
@@ -31,9 +31,9 @@ const NAV: NavItem[] = [
     ),
   },
   {
-    href: "/textes",
-    labelKey: "textes",
-    match: (p) => p === "/textes" || p.startsWith("/textes/"),
+    href: "/books",
+    labelKey: "books",
+    match: (p) => p === "/books" || p.startsWith("/books/"),
     icon: (
       <svg viewBox="0 0 16 16" width="17" height="17" fill="none" aria-hidden="true">
         <path

@@ -7,49 +7,131 @@ datasource db {
   provider = "postgresql"
 }
 
-model Texte {
-  id          String       @id @default(cuid())
-  ownerId     String       @map("owner_id")
-  reference   String
-  content     String       @default("")
-  source      String?
-  scanKey     String?      @map("scan_key")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  annotations Annotation[]
+// A book owned by a user: title, optional author, one attached PDF (n pages).
+model Book {
+  id        String    @id @default(cuid())
+  ownerId   String    @map("owner_id")
+  title     String
+  author    String?
+  pdfKey    String?   @map("pdf_key") // R2 object key for the book PDF
+  pageCount Int?      @map("page_count")
+  createdAt DateTime  @default(now()) @map("created_at")
+  passages  Passage[]
 
   @@index([ownerId])
-  @@map("texte")
+  @@map("book")
 }
 
-model Tag {
-  id          String       @id @default(cuid())
-  ownerId     String       @map("owner_id")
-  layer       String
-  code        String
-  label       String?
-  annotations Annotation[]
+// A numbered, titled unit of a book; maps to a continuous PDF region
+// (startPage, startFrac) -> (endPage, endFrac), frac in [0,1].
+model Passage {
+  id         String      @id @default(cuid())
+  ownerId    String      @map("owner_id")
+  bookId     String      @map("book_id")
+  number     Int
+  title      String      @default("")
+  text       String      @default("")
+  startPage  Int?        @map("start_page")
+  startFrac  Float?      @map("start_frac")
+  endPage    Int?        @map("end_page")
+  endFrac    Float?      @map("end_frac")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  book       Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  placements Placement[]
+  variants   Variant[]
 
-  @@unique([ownerId, layer, code])
   @@index([ownerId])
-  @@index([layer])
+  @@index([bookId])
+  @@map("passage")
+}
+
+// Reusable per-user tag tree, infinite depth. Only roots carry a `type`;
+// sub-tags have a name only. Children of the node chosen at level n are the
+// candidates at level n+1.
+model Tag {
+  id            String         @id @default(cuid())
+  ownerId       String         @map("owner_id")
+  parentId      String?        @map("parent_id") // null => root
+  type          String? // set ONLY on roots; sub-tags have no type
+  name          String
+  createdAt     DateTime       @default(now()) @map("created_at")
+  parent        Tag?           @relation("TagTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children      Tag[]          @relation("TagTree")
+  placementTags PlacementTag[]
+
+  // Sibling names are unique under a parent. NULL parents are treated as
+  // distinct by Postgres, so root uniqueness is enforced by an extra partial
+  // unique index added in the migration (owner_id, type, name) WHERE parent_id IS NULL.
+  @@unique([ownerId, parentId, name])
+  @@index([ownerId])
+  @@index([parentId])
   @@map("tag")
 }
 
-model Annotation {
-  id        String   @id @default(cuid())
-  ownerId   String   @map("owner_id")
-  texteId   String   @map("texte_id")
-  start     Int
-  end       Int
-  tagId     String   @map("tag_id")
-  note      String?
-  createdAt DateTime @default(now()) @map("created_at")
-  texte     Texte    @relation(fields: [texteId], references: [id], onDelete: Cascade)
-  tag       Tag      @relation(fields: [tagId], references: [id])
+// A span on a passage's title or text, carrying 0..n tags + an optional free
+// description. Tagless (description-only) placements are allowed.
+model Placement {
+  id          String         @id @default(cuid())
+  ownerId     String         @map("owner_id")
+  passageId   String         @map("passage_id")
+  field       String // "TITLE" | "TEXT"
+  start       Int
+  end         Int
+  description String? // free text, may embed mention tokens
+  createdAt   DateTime       @default(now()) @map("created_at")
+  passage     Passage        @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  tags        PlacementTag[]
+  refsOut     PlacementRef[] @relation("RefSource")
 
   @@index([ownerId])
-  @@index([texteId])
+  @@index([passageId])
+  @@index([passageId, field, start, end])
+  @@map("placement")
+}
+
+// Join row: many tags per placement.
+model PlacementTag {
+  placementId String    @map("placement_id")
+  tagId       String    @map("tag_id")
+  ownerId     String    @map("owner_id")
+  placement   Placement @relation(fields: [placementId], references: [id], onDelete: Cascade)
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([placementId, tagId])
   @@index([tagId])
-  @@index([texteId, start, end])
-  @@map("annotation")
+  @@index([ownerId])
+  @@map("placement_tag")
+}
+
+// A description mentions another span / passage / variant (polymorphic target,
+// no FK; ownership validated in the service layer).
+model PlacementRef {
+  id         String    @id @default(cuid())
+  ownerId    String    @map("owner_id")
+  sourceId   String    @map("source_id") // placement whose description mentions
+  targetType String    @map("target_type") // "PLACEMENT" | "PASSAGE" | "VARIANT"
+  targetId   String    @map("target_id") // no FK (polymorphic)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  source     Placement @relation("RefSource", fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([sourceId])
+  @@index([targetId])
+  @@map("placement_ref")
+}
+
+// An alternative version of a passage: its own text + its own scan.
+model Variant {
+  id        String   @id @default(cuid())
+  ownerId   String   @map("owner_id")
+  passageId String   @map("passage_id")
+  label     String?
+  text      String   @default("")
+  scanKey   String?  @map("scan_key") // R2 key (image or pdf)
+  createdAt DateTime @default(now()) @map("created_at")
+  passage   Passage  @relation(fields: [passageId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([passageId])
+  @@map("variant")
 }
