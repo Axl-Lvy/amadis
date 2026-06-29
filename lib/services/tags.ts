@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { rankByQuery, tagPath, type TagNode } from "@/lib/tag-tree";
 
 import { ServiceError } from "./errors";
 
@@ -6,14 +7,10 @@ import { ServiceError } from "./errors";
 // sub-tags have a name only. Candidates at level n+1 are the children of the tag
 // chosen at level n. Uniqueness is enforced per (ownerId, parentId, name) and,
 // for roots, per (ownerId, type, name) via a partial index. Every query is
-// owner-scoped.
+// owner-scoped. Pure helpers (rankByQuery, tagPath) and the TagNode type live in
+// the client-safe lib/tag-tree module and are re-exported here for convenience.
 
-export type TagNode = {
-  id: string;
-  parentId: string | null;
-  type: string | null;
-  name: string;
-};
+export { rankByQuery, tagPath, type TagNode } from "@/lib/tag-tree";
 
 export type CreateTagInput = {
   parentId?: string | null;
@@ -22,24 +19,6 @@ export type CreateTagInput = {
 };
 
 const SEARCH_LIMIT = 20;
-
-// Rank by prefix-then-substring (case-insensitive), then alphabetically. Empty
-// query keeps the alphabetical order. Pure helper, exported for unit tests.
-export function rankByQuery<T>(items: T[], key: (t: T) => string, query: string): T[] {
-  const q = query.trim().toLocaleLowerCase();
-  const scored = items.map((item) => {
-    const value = key(item).toLocaleLowerCase();
-    let score = 3;
-    if (q === "") score = 0;
-    else if (value.startsWith(q)) score = 0;
-    else if (value.includes(q)) score = 1;
-    return { item, value, score };
-  });
-  return scored
-    .filter((s) => s.score < 3)
-    .sort((a, b) => a.score - b.score || a.value.localeCompare(b.value))
-    .map((s) => s.item);
-}
 
 // Distinct root types (fuzzy over the caller's existing root types).
 export async function searchRootTypes(ownerId: string, query: string): Promise<string[]> {
@@ -160,22 +139,6 @@ export async function getTagPath(ownerId: string, tagId: string): Promise<TagNod
       select: { id: true, parentId: true, type: true, name: true },
     });
     if (!node) throw new ServiceError("tagNotFound");
-    path.unshift(node);
-    current = node.parentId;
-  }
-  return path;
-}
-
-// Pure helper: build a tag's root->node path from an in-memory node set (avoids
-// per-tag round trips when rendering many placements). Unknown ids yield [].
-export function tagPath(nodesById: Map<string, TagNode>, tagId: string): TagNode[] {
-  const path: TagNode[] = [];
-  const seen = new Set<string>();
-  let current: string | null = tagId;
-  while (current && !seen.has(current)) {
-    seen.add(current);
-    const node = nodesById.get(current);
-    if (!node) break;
     path.unshift(node);
     current = node.parentId;
   }
