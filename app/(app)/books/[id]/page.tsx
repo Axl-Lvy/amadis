@@ -5,7 +5,10 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { getBook } from "@/lib/services/books";
 import { isServiceError } from "@/lib/services/errors";
+import { listMarks } from "@/lib/services/marks";
 import { listPassages } from "@/lib/services/passages";
+import { listPlacements } from "@/lib/services/placements";
+import { listAllTags } from "@/lib/services/tags";
 
 import {
   createPassageAction,
@@ -13,7 +16,8 @@ import {
   reorderPassagesFormAction,
 } from "./actions";
 import { BookHeader } from "./book-header";
-import { BookPdf, type SegPassage } from "./book-pdf";
+import { BookPdf } from "./book-pdf";
+import type { PlacementView } from "./passages/[pid]/passage-annotator";
 
 // Reads the session and the book's data, so it renders dynamically.
 export const dynamic = "force-dynamic";
@@ -36,16 +40,30 @@ export default async function BookDetailPage({
   }
 
   const passages = await listPassages(user.id, id);
+  const [marks, tags] = await Promise.all([
+    listMarks(user.id, id),
+    listAllTags(user.id),
+  ]);
+  const placementsByPassage = await Promise.all(
+    passages.map((p) => listPlacements(user.id, p.id)),
+  );
 
-  const segPassages: SegPassage[] = passages.map((p) => ({
+  const pdfPassages = passages.map((p, i) => ({
     id: p.id,
     number: p.number,
     title: p.title,
     text: p.text,
-    startPage: p.startPage,
-    startFrac: p.startFrac,
-    endPage: p.endPage,
-    endFrac: p.endFrac,
+    tags,
+    placements: placementsByPassage[i].map(
+      (pl): PlacementView => ({
+        id: pl.id,
+        field: pl.field === "TITLE" ? "TITLE" : "TEXT",
+        start: pl.start,
+        end: pl.end,
+        description: pl.description,
+        tagIds: pl.tags.map((t) => t.tagId),
+      }),
+    ),
   }));
 
   return (
@@ -122,14 +140,6 @@ export default async function BookDetailPage({
                         title: p.title || tp("untitled"),
                       })}
                     </Link>
-                    <div className="sub">
-                      {p.startPage == null
-                        ? tp("noRegion")
-                        : tp("hasRegion", {
-                            startPage: p.startPage,
-                            endPage: p.endPage ?? p.startPage,
-                          })}
-                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <form action={moveUp}>
@@ -181,7 +191,8 @@ export default async function BookDetailPage({
         <BookPdf
           bookId={book.id}
           hasPdf={Boolean(book.pdfKey)}
-          passages={segPassages}
+          marks={marks.map((m) => ({ id: m.id, page: m.page, frac: m.frac }))}
+          passages={pdfPassages}
         />
       </section>
     </>
