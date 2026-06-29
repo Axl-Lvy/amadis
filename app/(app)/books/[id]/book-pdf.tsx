@@ -68,6 +68,10 @@ function PdfView({
   // Restore the per-book preference.
   useEffect(() => {
     const saved = globalThis.localStorage?.getItem(`pdf-view-mode:${bookId}`);
+    // One-time restore of the persisted view preference from an external store
+    // (localStorage). Kept in an effect — not a lazy initializer — to avoid an
+    // SSR hydration mismatch; this is a sanctioned external-system sync.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved === "areas" || saved === "passages") setMode(saved);
   }, [bookId]);
 
