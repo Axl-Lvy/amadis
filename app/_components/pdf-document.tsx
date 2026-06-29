@@ -164,3 +164,23 @@ export function PdfPages({ url, onPointClick, onGeometry, overlay }: Readonly<Pr
     </div>
   );
 }
+
+// Self-contained scrollable PDF viewer used where the PDF is just displayed
+// (e.g. a variant scan). The areas view uses <PdfPages> directly with its own
+// shared scroll container instead.
+export function PdfDocument({ url }: Readonly<{ url: string }>) {
+  return (
+    <div
+      style={{
+        height: "70vh",
+        overflow: "auto",
+        background: "var(--surface-2)",
+        border: "1px solid var(--line)",
+        borderRadius: 12,
+        padding: 12,
+      }}
+    >
+      <PdfPages url={url} />
+    </div>
+  );
+}
