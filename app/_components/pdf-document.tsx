@@ -1,7 +1,7 @@
 "use client";
 
 import type { PDFDocumentLoadingTask } from "pdfjs-dist";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Reusable continuous-scroll PDF renderer (pdf.js). Loads client-side only —
 // pdf.js touches browser-only globals, so it is dynamically imported inside an
@@ -122,18 +122,24 @@ export function PdfDocument({ url, onPointClick, overlays = [], onReady }: Reado
     };
   }, [url, onReady]);
 
-  const handleClick = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      if (!onPointClick) return;
+  // Click-to-pick a point. Attached imperatively (delegated on the pages host so
+  // it survives page re-renders) rather than as a JSX handler on a non-interactive
+  // element. There is no keyboard equivalent for picking an arbitrary vertical
+  // position; the keyboard-accessible path is the segmenter's own controls.
+  useEffect(() => {
+    const host = pagesRef.current;
+    if (!host || !onPointClick) return;
+    const onClick = (event: MouseEvent) => {
       const target = (event.target as HTMLElement).closest<HTMLElement>("[data-page]");
       if (!target) return;
       const page = Number(target.dataset.page);
       const r = target.getBoundingClientRect();
       const frac = Math.min(1, Math.max(0, (event.clientY - r.top) / r.height));
       onPointClick({ page, frac });
-    },
-    [onPointClick],
-  );
+    };
+    host.addEventListener("click", onClick);
+    return () => host.removeEventListener("click", onClick);
+  }, [onPointClick]);
 
   return (
     <div
@@ -158,11 +164,7 @@ export function PdfDocument({ url, onPointClick, overlays = [], onReady }: Reado
           ⚠
         </p>
       )}
-      <div
-        ref={pagesRef}
-        onClick={handleClick}
-        style={{ cursor: onPointClick ? "crosshair" : "default" }}
-      />
+      <div ref={pagesRef} style={{ cursor: onPointClick ? "crosshair" : "default" }} />
       {/* Overlay markers, positioned over the rendered pages. */}
       {rects.length > 0 &&
         overlays.map((o, i) => {
