@@ -54,6 +54,28 @@ export async function searchChildren(ownerId: string, parentId: string, query: s
   return rankByQuery(children, (t) => t.name, query).slice(0, SEARCH_LIMIT);
 }
 
+const NODE_SELECT = { id: true, parentId: true, type: true, name: true } as const;
+
+// Resolve the type for a new node: roots require a type; sub-tags carry none and
+// require an owned parent. Throws on a missing type or an unowned parent.
+async function resolveNodeType(
+  ownerId: string,
+  parentId: string | null,
+  inputType: string | null | undefined,
+): Promise<string | null> {
+  if (parentId === null) {
+    const type = inputType?.trim() || null;
+    if (!type) throw new ServiceError("tagTypeRequired");
+    return type;
+  }
+  const parent = await prisma.tag.findFirst({
+    where: { id: parentId, ownerId },
+    select: { id: true },
+  });
+  if (!parent) throw new ServiceError("tagParentInvalid");
+  return null;
+}
+
 // Create-on-the-fly at any level. Find-or-create so the same node is reused
 // across placements (idempotent on the uniqueness key, race-safe via P2002).
 export async function createTag(ownerId: string, input: CreateTagInput): Promise<TagNode> {
@@ -61,43 +83,20 @@ export async function createTag(ownerId: string, input: CreateTagInput): Promise
   if (!name) throw new ServiceError("tagNameRequired");
 
   const parentId = input.parentId ?? null;
-  let type: string | null;
+  const type = await resolveNodeType(ownerId, parentId, input.type);
+  const where = { ownerId, parentId, name, ...(parentId === null ? { type } : {}) };
 
-  if (parentId === null) {
-    // Root: requires a type, never a parent type carried in.
-    type = input.type?.trim() || null;
-    if (!type) throw new ServiceError("tagTypeRequired");
-  } else {
-    // Sub-tag: parent must be owned; sub-tags carry no type.
-    const parent = await prisma.tag.findFirst({
-      where: { id: parentId, ownerId },
-      select: { id: true },
-    });
-    if (!parent) throw new ServiceError("tagParentInvalid");
-    type = null;
-  }
-
-  const existing = await prisma.tag.findFirst({
-    where: { ownerId, parentId, name, ...(parentId === null ? { type } : {}) },
-    select: { id: true, parentId: true, type: true, name: true },
-  });
+  const existing = await prisma.tag.findFirst({ where, select: NODE_SELECT });
   if (existing) return existing;
 
   try {
-    return await prisma.tag.create({
-      data: { ownerId, parentId, type, name },
-      select: { id: true, parentId: true, type: true, name: true },
-    });
+    return await prisma.tag.create({ data: { ownerId, parentId, type, name }, select: NODE_SELECT });
   } catch (error) {
     // Concurrent create of the same node: fall back to the now-existing row.
-    if (isUniqueViolation(error)) {
-      const row = await prisma.tag.findFirst({
-        where: { ownerId, parentId, name, ...(parentId === null ? { type } : {}) },
-        select: { id: true, parentId: true, type: true, name: true },
-      });
-      if (row) return row;
-    }
-    throw error;
+    if (!isUniqueViolation(error)) throw error;
+    const row = await prisma.tag.findFirst({ where, select: NODE_SELECT });
+    if (!row) throw error;
+    return row;
   }
 }
 

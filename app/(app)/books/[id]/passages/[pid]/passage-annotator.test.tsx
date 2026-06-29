@@ -66,7 +66,7 @@ describe("PassageAnnotator rendering", () => {
     // ("😀" is one code point / two UTF-16 units).
     const { container } = render([]);
     const cells = container.querySelectorAll("[data-cp]");
-    expect(cells.length).toBe(6 + 8);
+    expect(cells).toHaveLength(6 + 8);
     // The emoji must render as a single cell.
     const emojiCell = Array.from(cells).find((el) => el.textContent === "😀");
     expect(emojiCell).toBeDefined();

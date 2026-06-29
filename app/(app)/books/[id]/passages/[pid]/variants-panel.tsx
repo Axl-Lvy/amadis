@@ -113,10 +113,10 @@ function NewVariantForm({
 
   return (
     <div className="card">
-      <div
+      <fieldset
         className={styles.form}
-        role="group"
         aria-label={t("addVariant")}
+        style={{ border: 0, margin: 0, padding: 0, minInlineSize: 0 }}
       >
         <div className={styles.formRow}>
           <label className={styles.fieldLabel} htmlFor="new-variant-label">
@@ -162,7 +162,7 @@ function NewVariantForm({
             {common("cancel")}
           </button>
         </div>
-      </div>
+      </fieldset>
     </div>
   );
 }

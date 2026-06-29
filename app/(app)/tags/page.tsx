@@ -22,7 +22,7 @@ type TreeNode = TagNode & { children: TreeNode[] };
 function hueForType(type: string | null | undefined): string {
   if (!type) return "var(--accent)";
   let h = 0;
-  for (let i = 0; i < type.length; i++) h = (h * 31 + type.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < type.length; i++) h = (h * 31 + (type.codePointAt(i) ?? 0)) >>> 0;
   return `var(--hue-${(h % 6) + 1})`;
 }
 

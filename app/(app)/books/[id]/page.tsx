@@ -20,9 +20,7 @@ export const dynamic = "force-dynamic";
 
 export default async function BookDetailPage({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+}: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
   const user = await requireUser();
   const t = await getTranslations("books");
@@ -125,12 +123,12 @@ export default async function BookDetailPage({
                       })}
                     </Link>
                     <div className="sub">
-                      {p.startPage != null
-                        ? tp("hasRegion", {
+                      {p.startPage == null
+                        ? tp("noRegion")
+                        : tp("hasRegion", {
                             startPage: p.startPage,
                             endPage: p.endPage ?? p.startPage,
-                          })
-                        : tp("noRegion")}
+                          })}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

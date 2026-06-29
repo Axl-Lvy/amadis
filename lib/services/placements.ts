@@ -14,7 +14,7 @@ export type PlacementField = (typeof PLACEMENT_FIELDS)[number];
 
 export type CreatePlacementInput = {
   passageId: string;
-  field: PlacementField | string;
+  field: string; // validated to PlacementField by normalizeField
   start: number;
   end: number;
   tagIds?: string[];
@@ -31,8 +31,7 @@ function normalizeField(field: string): PlacementField {
 }
 
 function cleanDescription(description?: string | null): string | null {
-  const trimmed = description?.trim();
-  return trimmed ? trimmed : null;
+  return description?.trim() || null;
 }
 
 function dedupe(ids?: string[]): string[] {
@@ -125,9 +124,10 @@ export async function updatePlacement(
   });
   if (!existing) throw new ServiceError("placementNotFound");
 
-  const nextTagIds = input.tagIds !== undefined ? dedupe(input.tagIds) : existing.tags.map((t) => t.tagId);
+  const nextTagIds =
+    input.tagIds === undefined ? existing.tags.map((t) => t.tagId) : dedupe(input.tagIds);
   const nextDescription =
-    input.description !== undefined ? cleanDescription(input.description) : existing.description;
+    input.description === undefined ? existing.description : cleanDescription(input.description);
   if (nextTagIds.length === 0 && !nextDescription) throw new ServiceError("emptyPlacement");
 
   if (input.tagIds !== undefined) await assertTagsOwned(ownerId, nextTagIds);

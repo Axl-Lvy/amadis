@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { getString } from "@/lib/forms";
+
 import { updateBookAction } from "./actions";
 
 type Props = {
@@ -26,8 +28,8 @@ export function BookHeader({ id, title, author }: Readonly<Props>) {
   const [pending, startTransition] = useTransition();
 
   function save(formData: FormData) {
-    const nextTitle = String(formData.get("title") ?? "");
-    const nextAuthor = String(formData.get("author") ?? "");
+    const nextTitle = getString(formData, "title");
+    const nextAuthor = getString(formData, "author");
     setError(null);
     startTransition(async () => {
       const res = await updateBookAction(id, {

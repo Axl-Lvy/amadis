@@ -78,26 +78,31 @@ function mentionToken(type: RefTargetType, targetId: string, label: string): str
   return `@[${safe}](${type}:${targetId})`;
 }
 
-// Parse a description into a sequence of plain-text and mention segments.
+// Parse a description into a sequence of plain-text and mention segments. Each
+// segment carries its `start` character offset, which gives every segment a
+// stable React key without relying on the array index.
 type Segment =
-  | { kind: "text"; text: string }
-  | { kind: "mention"; type: RefTargetType; targetId: string; label: string };
+  | { kind: "text"; text: string; start: number }
+  | { kind: "mention"; type: RefTargetType; targetId: string; label: string; start: number };
 
 function parseDescription(description: string): Segment[] {
   const segments: Segment[] = [];
   let last = 0;
   for (const m of description.matchAll(MENTION_RE)) {
     const idx = m.index ?? 0;
-    if (idx > last) segments.push({ kind: "text", text: description.slice(last, idx) });
+    if (idx > last) segments.push({ kind: "text", text: description.slice(last, idx), start: last });
     segments.push({
       kind: "mention",
       label: m[1],
       type: m[2] as RefTargetType,
       targetId: m[3],
+      start: idx,
     });
     last = idx + m[0].length;
   }
-  if (last < description.length) segments.push({ kind: "text", text: description.slice(last) });
+  if (last < description.length) {
+    segments.push({ kind: "text", text: description.slice(last), start: last });
+  }
   return segments;
 }
 
@@ -116,6 +121,46 @@ function mentionsIn(description: string): { type: RefTargetType; targetId: strin
 }
 
 const refKey = (type: RefTargetType, targetId: string) => `${type}:${targetId}`;
+
+// Drop the current text selection (used when a folio panel closes). Module scope
+// — it closes over nothing.
+function clearSelection() {
+  globalThis.getSelection()?.removeAllRanges();
+}
+
+type Hrefs = Map<string, { href: string; exists: boolean }>;
+
+// Render a description, turning mention tokens into navigable chips. The href
+// comes from the resolved-refs map; an unresolved/deleted target renders as a
+// struck-through dead link (no navigation). Keys are derived from each segment's
+// position in the description (not the array index).
+function DescriptionText({ description, hrefs }: Readonly<{ description: string; hrefs: Hrefs }>) {
+  const t = useTranslations("annotator");
+  const segments = parseDescription(description);
+  return (
+    <>
+      {segments.map((seg) => {
+        const key = `${seg.kind}-${seg.start}`;
+        if (seg.kind === "text") {
+          return <span key={key}>{seg.text}</span>;
+        }
+        const resolved = hrefs.get(refKey(seg.type, seg.targetId));
+        if (resolved?.exists && resolved.href !== "#") {
+          return (
+            <a key={key} href={resolved.href} className={styles.descMention}>
+              @{seg.label}
+            </a>
+          );
+        }
+        return (
+          <span key={key} className={styles.descMentionDead} title={t("mention.deadTarget")}>
+            @{seg.label}
+          </span>
+        );
+      })}
+    </>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Geometry.
@@ -232,7 +277,7 @@ export function PassageAnnotator({
             editing={editing?.field === "TITLE" ? editing : null}
             renderPanel={(close) => (
               <InscribePanel
-                key={editing && editing.mode === "edit" ? editing.id : "create-title"}
+                key={editing?.mode === "edit" ? editing.id : "create-title"}
                 bookId={bookId}
                 passageId={passage.id}
                 tags={tags}
@@ -259,7 +304,7 @@ export function PassageAnnotator({
             editing={editing?.field === "TEXT" ? editing : null}
             renderPanel={(close) => (
               <InscribePanel
-                key={editing && editing.mode === "edit" ? editing.id : "create-text"}
+                key={editing?.mode === "edit" ? editing.id : "create-text"}
                 bookId={bookId}
                 passageId={passage.id}
                 tags={tags}
@@ -329,7 +374,7 @@ export function PassageAnnotator({
                       )}
                       {p.description && (
                         <p className={styles.desc} style={{ marginTop: 5 }}>
-                          <DescriptionText description={p.description} />
+                          <DescriptionText description={p.description} hrefs={hrefs} />
                         </p>
                       )}
                       <div className={styles.off}>
@@ -383,33 +428,6 @@ export function PassageAnnotator({
       <style>{`.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}`}</style>
     </div>
   );
-
-  // Render a description, turning mention tokens into navigable chips. The href
-  // comes from the resolved-refs map; an unresolved/deleted target renders as a
-  // struck-through dead link (no navigation).
-  function DescriptionText({ description }: Readonly<{ description: string }>) {
-    const segments = parseDescription(description);
-    return (
-      <>
-        {segments.map((seg, i) => {
-          if (seg.kind === "text") return <span key={i}>{seg.text}</span>;
-          const resolved = hrefs.get(refKey(seg.type, seg.targetId));
-          if (resolved?.exists && resolved.href !== "#") {
-            return (
-              <a key={i} href={resolved.href} className={styles.descMention}>
-                @{seg.label}
-              </a>
-            );
-          }
-          return (
-            <span key={i} className={styles.descMentionDead} title={t("mention.deadTarget")}>
-              @{seg.label}
-            </span>
-          );
-        })}
-      </>
-    );
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -512,7 +530,7 @@ function Folio({
 
   // When editing an existing placement in this field, anchor the panel to its start.
   useEffect(() => {
-    if (!editing || editing.mode !== "edit") return;
+    if (editing?.mode !== "edit") return;
     const folio = folioRef.current;
     if (!folio) return;
     // Anchor to the placement's start cell; if it is gone (e.g. the text was
@@ -548,10 +566,6 @@ function Folio({
     }
     setPos({ left, top });
   }, [editing]);
-
-  function close() {
-    globalThis.getSelection()?.removeAllRanges();
-  }
 
   // Pre-bucket code points into lines (newlines counted, not rendered).
   const lines = useMemo(() => {
@@ -690,7 +704,7 @@ function Folio({
             zIndex: 40,
           }}
         >
-          {renderPanel(close)}
+          {renderPanel(clearSelection)}
         </div>
       )}
     </section>
@@ -758,7 +772,7 @@ function InscribePanel({
   const [pickingMention, setPickingMention] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionResults, setMentionResults] = useState<
-    { type: "PLACEMENT" | "PASSAGE" | "VARIANT"; id: string; label: string; context: string }[]
+    { type: RefTargetType; id: string; label: string; context: string }[]
   >([]);
 
   useEffect(() => {
@@ -779,19 +793,15 @@ function InscribePanel({
     };
   }, [pickingMention, mentionQuery, editing]);
 
-  function insertMention(c: {
-    type: "PLACEMENT" | "PASSAGE" | "VARIANT";
-    id: string;
-    label: string;
-  }) {
+  function insertMention(c: { type: RefTargetType; id: string; label: string }) {
     const token = mentionToken(c.type, c.id, c.label);
-    setDescription((d) => (d ? `${d.replace(/\s+$/, "")} ${token} ` : `${token} `));
+    setDescription((d) => (d ? `${d.trimEnd()} ${token} ` : `${token} `));
     setPickingMention(false);
     setMentionQuery("");
     setMentionResults([]);
   }
 
-  function removeMention(type: "PLACEMENT" | "PASSAGE" | "VARIANT", targetId: string) {
+  function removeMention(type: RefTargetType, targetId: string) {
     setDescription((d) =>
       d
         .replace(MENTION_RE, (full, _label, ty, id) =>
@@ -806,7 +816,7 @@ function InscribePanel({
   const draftMentions = useMemo(() => {
     const segs = parseDescription(description);
     const seen = new Set<string>();
-    const out: { type: "PLACEMENT" | "PASSAGE" | "VARIANT"; targetId: string; label: string }[] = [];
+    const out: { type: RefTargetType; targetId: string; label: string }[] = [];
     for (const s of segs) {
       if (s.kind === "mention") {
         const key = `${s.type}:${s.targetId}`;
@@ -819,6 +829,65 @@ function InscribePanel({
     return out;
   }, [description]);
 
+  // Create or update the placement; returns its id, or null after surfacing an error.
+  async function persistPlacement(cleanDesc: string): Promise<string | null> {
+    if (editing.mode === "create") {
+      const res = await createPlacement(bookId, {
+        passageId,
+        field: editing.field,
+        start: editing.start,
+        end: editing.end,
+        tagIds,
+        description: cleanDesc || null,
+      });
+      if (!res.ok) {
+        setError(res.error);
+        return null;
+      }
+      return res.id;
+    }
+    const res = await updatePlacement(bookId, passageId, editing.id, {
+      tagIds,
+      description: cleanDesc || null,
+    });
+    if (!res.ok) {
+      setError(res.error);
+      return null;
+    }
+    return editing.id;
+  }
+
+  // Reconcile PlacementRef rows with the mention tokens in the description:
+  // create newly-added mentions (createRef is idempotent), delete removed ones.
+  // Returns false after surfacing an error.
+  async function reconcileRefs(placementId: string, cleanDesc: string): Promise<boolean> {
+    const wanted = mentionsIn(cleanDesc);
+    const have = new Set(refs.map((r) => refKey(r.targetType, r.targetId)));
+    const want = new Set(wanted.map((m) => refKey(m.type, m.targetId)));
+
+    for (const m of wanted) {
+      if (have.has(refKey(m.type, m.targetId))) continue;
+      const r = await createRef(bookId, passageId, {
+        sourceId: placementId,
+        targetType: m.type,
+        targetId: m.targetId,
+      });
+      if (!r.ok) {
+        setError(r.error);
+        return false;
+      }
+    }
+    for (const r of refs) {
+      if (want.has(refKey(r.targetType, r.targetId))) continue;
+      const d = await deleteRef(bookId, passageId, r.id);
+      if (!d.ok) {
+        setError(d.error);
+        return false;
+      }
+    }
+    return true;
+  }
+
   function save() {
     setError(null);
     // In edit mode, wait for the existing refs to load so reconciliation can see
@@ -830,71 +899,16 @@ function InscribePanel({
       return;
     }
     startTransition(async () => {
-      let placementId: string;
-      if (editing.mode === "create") {
-        const res = await createPlacement(bookId, {
-          passageId,
-          field: editing.field,
-          start: editing.start,
-          end: editing.end,
-          tagIds,
-          description: cleanDesc || null,
-        });
-        if (!res.ok) {
-          setError(res.error);
-          return;
-        }
-        placementId = res.id;
-      } else {
-        const res = await updatePlacement(bookId, passageId, editing.id, {
-          tagIds,
-          description: cleanDesc || null,
-        });
-        if (!res.ok) {
-          setError(res.error);
-          return;
-        }
-        placementId = editing.id;
-      }
-
-      // Reconcile refs with the mention tokens now in the description.
-      const wanted = mentionsIn(cleanDesc);
-      const haveKeys = new Set(refs.map((r) => `${r.targetType}:${r.targetId}`));
-      const wantKeys = new Set(wanted.map((m) => `${m.type}:${m.targetId}`));
-
-      // Create newly-added mentions (createRef is idempotent server-side).
-      for (const m of wanted) {
-        if (!haveKeys.has(`${m.type}:${m.targetId}`)) {
-          const r = await createRef(bookId, passageId, {
-            sourceId: placementId,
-            targetType: m.type,
-            targetId: m.targetId,
-          });
-          if (!r.ok) {
-            setError(r.error);
-            return;
-          }
-        }
-      }
-      // Delete refs whose token was removed.
-      for (const r of refs) {
-        if (!wantKeys.has(`${r.targetType}:${r.targetId}`)) {
-          const d = await deleteRef(bookId, passageId, r.id);
-          if (!d.ok) {
-            setError(d.error);
-            return;
-          }
-        }
-      }
-
-      onDone();
+      const placementId = await persistPlacement(cleanDesc);
+      if (placementId === null) return;
+      if (await reconcileRefs(placementId, cleanDesc)) onDone();
     });
   }
 
   const src = sliceByCodePoint(fieldText, editing.start, editing.end);
 
   return (
-    <div className={styles.inscribe} role="dialog" aria-label={t("panel.ariaLabel")}>
+    <dialog open className={styles.inscribe} aria-label={t("panel.ariaLabel")}>
       <div className={styles.inscribeHead}>
         <span className={styles.inscribeTitle}>
           {editing.mode === "edit" ? t("panel.editTitle") : t("panel.createTitle")}
@@ -996,6 +1010,6 @@ function InscribePanel({
           {editing.mode === "edit" ? tc("save") : t("panel.inscribe")}
         </button>
       </div>
-    </div>
+    </dialog>
   );
 }

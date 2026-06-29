@@ -84,7 +84,7 @@ export function TagTreePicker({ value, onChange, allTags = [] }: Readonly<Props>
   const inputRef = useRef<HTMLInputElement>(null);
 
   // The current parent node (deepest committed node of the in-progress path).
-  const parent = draft.stage !== "type" ? draft.nodes[draft.nodes.length - 1] : null;
+  const parent = draft.stage === "type" ? null : draft.nodes[draft.nodes.length - 1];
 
   // Debounced fetch of options for the current stage + query. The "type" stage
   // searches root types (string options, id:null). The "name"/"child" stages
@@ -240,19 +240,9 @@ export function TagTreePicker({ value, onChange, allTags = [] }: Readonly<Props>
     draft.nodes.forEach((n) => breadcrumb.push({ key: n.id, label: n.name }));
   }
 
-  const stageLabel =
-    draft.stage === "type"
-      ? t("stage.type")
-      : draft.stage === "name"
-        ? t("stage.name")
-        : t("stage.child");
-
-  const placeholder =
-    draft.stage === "type"
-      ? t("placeholder.type")
-      : draft.stage === "name"
-        ? t("placeholder.name")
-        : t("placeholder.child");
+  // draft.stage is exactly one of the i18n sub-keys (type | name | child).
+  const stageLabel = t(`stage.${draft.stage}`);
+  const placeholder = t(`placeholder.${draft.stage}`);
 
   const filteredOptions = rankByQuery(options, (o) => o.name, query);
   const trimmed = query.trim();
@@ -493,6 +483,6 @@ export function TagTreePicker({ value, onChange, allTags = [] }: Readonly<Props>
 export function hueForType(type: string | null | undefined): string {
   if (!type) return "var(--accent)";
   let h = 0;
-  for (let i = 0; i < type.length; i++) h = (h * 31 + type.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < type.length; i++) h = (h * 31 + (type.codePointAt(i) ?? 0)) >>> 0;
   return `var(--hue-${(h % 6) + 1})`;
 }

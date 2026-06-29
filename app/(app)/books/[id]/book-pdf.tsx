@@ -138,16 +138,12 @@ function PdfUploader({
   }
 
   const busy = status !== "idle";
-  const label =
-    status === "reading"
-      ? t("reading")
-      : status === "uploading"
-        ? t("uploading")
-        : status === "saving"
-          ? t("saving")
-          : replace
-            ? t("replacePdf")
-            : t("uploadPdf");
+  let label: string;
+  if (status === "reading" || status === "uploading" || status === "saving") {
+    label = t(status);
+  } else {
+    label = replace ? t("replacePdf") : t("uploadPdf");
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-3">
