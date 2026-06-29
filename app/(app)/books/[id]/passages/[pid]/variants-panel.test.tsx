@@ -5,8 +5,10 @@ import { renderWithIntl } from "@/test-utils/intl";
 
 import { VariantsPanel, type VariantView } from "./variants-panel";
 import {
+  attachVariantScan,
   createVariant,
   deleteVariant,
+  presignVariantScanUpload,
   updateVariant,
 } from "./variant-actions";
 
@@ -158,5 +160,162 @@ describe("VariantsPanel", () => {
     renderWithIntl(<VariantsPanel passageId="p1" variants={variants} />);
     expect(screen.getByText("No scan attached.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "View scan" })).not.toBeInTheDocument();
+  });
+});
+
+// ---- scan: upload + view ----------------------------------------------------
+
+const presign = presignVariantScanUpload as unknown as ReturnType<typeof vi.fn>;
+const attach = attachVariantScan as unknown as ReturnType<typeof vi.fn>;
+
+// Some upload-flow tests stub global.fetch; restore it afterwards.
+const realFetch = globalThis.fetch;
+afterEach(() => {
+  globalThis.fetch = realFetch;
+});
+
+function setScanFile(name: string, type = "image/png") {
+  const input = screen.getByLabelText("Choose a scan file (image or PDF)");
+  const file = new File(["x"], name, { type });
+  fireEvent.change(input, { target: { files: [file] } });
+  return file;
+}
+
+describe("VariantsPanel scan upload", () => {
+  it("presigns, PUTs the file, attaches the scan, then refreshes", async () => {
+    presign.mockResolvedValue({ ok: true, url: "https://r2/put", key: "k" });
+    attach.mockResolvedValue({ ok: true });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true } as Response);
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    const variants: VariantView[] = [
+      { id: "v1", label: "Scanned", text: "x", scanKey: null },
+    ];
+    renderWithIntl(<VariantsPanel passageId="p1" variants={variants} />);
+
+    setScanFile("folio.png");
+    fireEvent.click(screen.getByRole("button", { name: "Upload scan" }));
+
+    await waitFor(() => expect(presign).toHaveBeenCalled());
+    expect(presign).toHaveBeenCalledWith("v1", "folio.png", "image/png");
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://r2/put",
+      expect.objectContaining({ method: "PUT" }),
+    );
+
+    await waitFor(() => expect(attach).toHaveBeenCalled());
+    expect(attach).toHaveBeenCalledWith("b1", "p1", "v1", "k");
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+  });
+
+  it("does nothing when no file is chosen", () => {
+    const variants: VariantView[] = [
+      { id: "v1", label: "Scanned", text: "x", scanKey: null },
+    ];
+    renderWithIntl(<VariantsPanel passageId="p1" variants={variants} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Upload scan" }));
+    expect(presign).not.toHaveBeenCalled();
+  });
+
+  it("surfaces a presign error and never PUTs or attaches", async () => {
+    presign.mockResolvedValue({ ok: false, error: "Cannot presign" });
+    const fetchMock = vi.fn();
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const variants: VariantView[] = [
+      { id: "v1", label: "Scanned", text: "x", scanKey: null },
+    ];
+    renderWithIntl(<VariantsPanel passageId="p1" variants={variants} />);
+
+    setScanFile("folio.png");
+    fireEvent.click(screen.getByRole("button", { name: "Upload scan" }));
+
+    expect(await screen.findByText("Cannot presign")).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(attach).not.toHaveBeenCalled();
+  });
+
+  it("shows the status-coded message when the PUT fails", async () => {
+    presign.mockResolvedValue({ ok: true, url: "https://r2/put", key: "k" });
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: false, status: 500 } as Response) as typeof fetch;
+
+    const variants: VariantView[] = [
+      { id: "v1", label: "Scanned", text: "x", scanKey: null },
+    ];
+    renderWithIntl(<VariantsPanel passageId="p1" variants={variants} />);
+
+    setScanFile("folio.png");
+    fireEvent.click(screen.getByRole("button", { name: "Upload scan" }));
+
+    expect(await screen.findByText("Upload failed (500)")).toBeInTheDocument();
+    expect(attach).not.toHaveBeenCalled();
+  });
+
+  it("shows the generic upload-failed message when the PUT throws", async () => {
+    presign.mockResolvedValue({ ok: true, url: "https://r2/put", key: "k" });
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error("network")) as typeof fetch;
+
+    const variants: VariantView[] = [
+      { id: "v1", label: "Scanned", text: "x", scanKey: null },
+    ];
+    renderWithIntl(<VariantsPanel passageId="p1" variants={variants} />);
+
+    setScanFile("folio.png");
+    fireEvent.click(screen.getByRole("button", { name: "Upload scan" }));
+
+    expect(await screen.findByText("Upload failed")).toBeInTheDocument();
+    expect(attach).not.toHaveBeenCalled();
+  });
+
+  it("surfaces an attach error after a successful PUT", async () => {
+    presign.mockResolvedValue({ ok: true, url: "https://r2/put", key: "k" });
+    attach.mockResolvedValue({ ok: false, error: "Attach failed" });
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true } as Response) as typeof fetch;
+
+    const variants: VariantView[] = [
+      { id: "v1", label: "Scanned", text: "x", scanKey: null },
+    ];
+    renderWithIntl(<VariantsPanel passageId="p1" variants={variants} />);
+
+    setScanFile("folio.png");
+    fireEvent.click(screen.getByRole("button", { name: "Upload scan" }));
+
+    expect(await screen.findByText("Attach failed")).toBeInTheDocument();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+});
+
+describe("VariantsPanel scan view", () => {
+  it("toggles a same-origin <img> for an image scan", () => {
+    const variants: VariantView[] = [
+      { id: "v1", label: "With scan", text: "x", scanKey: "owner/b1/scan/folio.png" },
+    ];
+    renderWithIntl(<VariantsPanel passageId="p1" variants={variants} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "View scan" }));
+    const img = screen.getByRole("img", { name: "Scan of With scan" });
+    expect(img).toHaveAttribute("src", "/variants/v1/scan");
+
+    // Clicking again hides it.
+    fireEvent.click(screen.getByRole("button", { name: "Hide scan" }));
+    expect(screen.queryByRole("img", { name: "Scan of With scan" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View scan" })).toBeInTheDocument();
+  });
+
+  it("renders the stubbed PDF document for a .pdf scan (no <img>)", () => {
+    const variants: VariantView[] = [
+      { id: "v1", label: "With pdf", text: "x", scanKey: "owner/b1/scan/folio.pdf" },
+    ];
+    renderWithIntl(<VariantsPanel passageId="p1" variants={variants} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "View scan" }));
+    // The pdf-document stub renders null, so there is no <img> for a PDF scan.
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Hide scan" })).toBeInTheDocument();
   });
 });
