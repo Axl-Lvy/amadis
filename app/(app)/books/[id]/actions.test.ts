@@ -174,6 +174,13 @@ describe("mark actions", () => {
     expect(createMark).toHaveBeenCalledWith("owner-1", { bookId: "b1", page: 2, frac: 0.5 });
   });
 
+  it("moveMarkAction succeeds and calls updateMark with correct args", async () => {
+    vi.mocked(updateMark).mockResolvedValue(undefined as never);
+    const res = await moveMarkAction("m1", "b1", 3, 0.2);
+    expect(res).toEqual({ ok: true });
+    expect(updateMark).toHaveBeenCalledWith("owner-1", "m1", { page: 3, frac: 0.2 });
+  });
+
   it("moveMarkAction translates a ServiceError code", async () => {
     vi.mocked(updateMark).mockRejectedValue(new ServiceError("markNotFound"));
     const res = await moveMarkAction("m1", "b1", 1, 0.5);
@@ -184,6 +191,7 @@ describe("mark actions", () => {
     vi.mocked(deleteMark).mockResolvedValue(undefined as never);
     const res = await removeMarkAction("m1", "b1");
     expect(res).toEqual({ ok: true });
+    expect(deleteMark).toHaveBeenCalledWith("owner-1", "m1");
   });
 });
 
