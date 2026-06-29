@@ -17,13 +17,13 @@ model Book {
   pageCount Int?      @map("page_count")
   createdAt DateTime  @default(now()) @map("created_at")
   passages  Passage[]
+  marks     Mark[]
 
   @@index([ownerId])
   @@map("book")
 }
 
-// A numbered, titled unit of a book; maps to a continuous PDF region
-// (startPage, startFrac) -> (endPage, endFrac), frac in [0,1].
+// A numbered, titled unit of a book.
 model Passage {
   id         String      @id @default(cuid())
   ownerId    String      @map("owner_id")
@@ -31,10 +31,6 @@ model Passage {
   number     Int
   title      String      @default("")
   text       String      @default("")
-  startPage  Int?        @map("start_page")
-  startFrac  Float?      @map("start_frac")
-  endPage    Int?        @map("end_page")
-  endFrac    Float?      @map("end_frac")
   createdAt  DateTime    @default(now()) @map("created_at")
   book       Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
   placements Placement[]
@@ -43,6 +39,23 @@ model Passage {
   @@index([ownerId])
   @@index([bookId])
   @@map("passage")
+}
+
+// A book-level PDF boundary mark. Marks cut the PDF into ordered areas
+// (M marks => M+1 areas). Areas are associated with passages by order at render
+// time; there is no stored link. Owner-scoped like every table.
+model Mark {
+  id        String   @id @default(cuid())
+  ownerId   String   @map("owner_id")
+  bookId    String   @map("book_id")
+  page      Int // 1-based PDF page
+  frac      Float // vertical position in [0,1] within that page
+  createdAt DateTime @default(now()) @map("created_at")
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([bookId])
+  @@map("mark")
 }
 
 // Reusable per-user tag tree, infinite depth. Only roots carry a `type`;
