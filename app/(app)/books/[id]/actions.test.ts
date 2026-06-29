@@ -3,15 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ServiceError } from "@/lib/services/errors";
 
 import {
+  addMarkAction,
   attachBookPdfAction,
-  clearPassageRegionAction,
   createPassageAction,
-  createPassageForRegionAction,
   deletePassageAction,
+  moveMarkAction,
   presignBookPdfUploadAction,
+  removeMarkAction,
   reorderPassagesAction,
   reorderPassagesFormAction,
-  setPassageRegionAction,
   updateBookAction,
   updatePassageAction,
 } from "./actions";
@@ -30,8 +30,11 @@ vi.mock("@/lib/services/passages", () => ({
   deletePassage: vi.fn(),
   updatePassage: vi.fn(),
   reorderPassages: vi.fn(),
-  setPassageRegion: vi.fn(),
-  clearPassageRegion: vi.fn(),
+}));
+vi.mock("@/lib/services/marks", () => ({
+  createMark: vi.fn(),
+  updateMark: vi.fn(),
+  deleteMark: vi.fn(),
 }));
 vi.mock("@/lib/session", () => ({
   requireUserId: () => Promise.resolve("owner-1"),
@@ -47,13 +50,12 @@ import {
   updateBook,
 } from "@/lib/services/books";
 import {
-  clearPassageRegion,
   createPassage,
   deletePassage,
   reorderPassages,
-  setPassageRegion,
   updatePassage,
 } from "@/lib/services/passages";
+import { createMark, deleteMark, updateMark } from "@/lib/services/marks";
 import { revalidatePath } from "next/cache";
 
 function form(entries: Record<string, string>): FormData {
@@ -139,35 +141,6 @@ describe("updatePassageAction", () => {
   });
 });
 
-describe("createPassageForRegionAction", () => {
-  it("passes the region through to createPassage and revalidates", async () => {
-    vi.mocked(createPassage).mockResolvedValue({ id: "p9" } as never);
-    const region = { startPage: 1, startFrac: 0.1, endPage: 1, endFrac: 0.5 };
-    const res = await createPassageForRegionAction({
-      bookId: "b1",
-      number: 3,
-      title: "T",
-      text: "txt",
-      region,
-    });
-    expect(createPassage).toHaveBeenCalledWith("owner-1", {
-      bookId: "b1",
-      number: 3,
-      title: "T",
-      text: "txt",
-      region,
-    });
-    expect(revalidatePath).toHaveBeenCalledWith("/books/b1");
-    expect(res).toEqual({ ok: true });
-  });
-
-  it("translates a ServiceError", async () => {
-    vi.mocked(createPassage).mockRejectedValue(new ServiceError("passageNumberInvalid"));
-    const res = await createPassageForRegionAction({ bookId: "b1" });
-    expect(res).toEqual({ ok: false, error: "passageNumberInvalid" });
-  });
-});
-
 describe("reorderPassagesAction", () => {
   it("reorders for the owner and revalidates", async () => {
     vi.mocked(reorderPassages).mockResolvedValue(undefined as never);
@@ -193,30 +166,23 @@ describe("reorderPassagesFormAction", () => {
   });
 });
 
-describe("setPassageRegionAction", () => {
-  it("sets the region for the owner and revalidates", async () => {
-    vi.mocked(setPassageRegion).mockResolvedValue(undefined as never);
-    const region = { startPage: 2, startFrac: 0, endPage: 3, endFrac: 1 };
-    const res = await setPassageRegionAction("p1", "b1", region);
-    expect(setPassageRegion).toHaveBeenCalledWith("owner-1", "p1", region);
-    expect(revalidatePath).toHaveBeenCalledWith("/books/b1");
-    expect(res).toEqual({ ok: true });
+describe("mark actions", () => {
+  it("addMarkAction returns the new id on success", async () => {
+    vi.mocked(createMark).mockResolvedValue({ id: "m1" } as never);
+    const res = await addMarkAction("b1", 2, 0.5);
+    expect(res).toEqual({ ok: true, id: "m1" });
+    expect(createMark).toHaveBeenCalledWith("owner-1", { bookId: "b1", page: 2, frac: 0.5 });
   });
 
-  it("translates a ServiceError", async () => {
-    vi.mocked(setPassageRegion).mockRejectedValue(new ServiceError("passageNotFound"));
-    const region = { startPage: 1, startFrac: 0, endPage: 1, endFrac: 1 };
-    const res = await setPassageRegionAction("p1", "b1", region);
-    expect(res).toEqual({ ok: false, error: "passageNotFound" });
+  it("moveMarkAction translates a ServiceError code", async () => {
+    vi.mocked(updateMark).mockRejectedValue(new ServiceError("markNotFound"));
+    const res = await moveMarkAction("m1", "b1", 1, 0.5);
+    expect(res.ok).toBe(false);
   });
-});
 
-describe("clearPassageRegionAction", () => {
-  it("clears the region for the owner and revalidates", async () => {
-    vi.mocked(clearPassageRegion).mockResolvedValue(undefined as never);
-    const res = await clearPassageRegionAction("p1", "b1");
-    expect(clearPassageRegion).toHaveBeenCalledWith("owner-1", "p1");
-    expect(revalidatePath).toHaveBeenCalledWith("/books/b1");
+  it("removeMarkAction succeeds", async () => {
+    vi.mocked(deleteMark).mockResolvedValue(undefined as never);
+    const res = await removeMarkAction("m1", "b1");
     expect(res).toEqual({ ok: true });
   });
 });

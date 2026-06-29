@@ -12,13 +12,12 @@ import {
 } from "@/lib/services/books";
 import { isServiceError } from "@/lib/services/errors";
 import {
-  clearPassageRegion,
   createPassage,
   deletePassage,
   reorderPassages,
-  setPassageRegion,
   updatePassage,
 } from "@/lib/services/passages";
+import { createMark, deleteMark, updateMark } from "@/lib/services/marks";
 
 // Book-detail mutations. Two flavours:
 //  - Plain `<form action>` create/delete may throw (the page re-renders).
@@ -99,32 +98,6 @@ export async function updatePassageAction(
   }
 }
 
-// Programmatic create used by the PDF segmenter (region assigned in one step).
-export async function createPassageForRegionAction(input: {
-  bookId: string;
-  number?: number;
-  title?: string;
-  text?: string;
-  region?: { startPage: number; startFrac: number; endPage: number; endFrac: number };
-}): Promise<ActionResult> {
-  try {
-    const ownerId = await requireUserId();
-    // Atomic: the region is written in the same create, so a bad region never
-    // leaves an orphan numbered passage behind.
-    await createPassage(ownerId, {
-      bookId: input.bookId,
-      number: input.number,
-      title: input.title,
-      text: input.text,
-      region: input.region,
-    });
-    revalidatePath(`/books/${input.bookId}`);
-    return { ok: true };
-  } catch (e) {
-    return fail(e);
-  }
-}
-
 // Programmatic reorder (move up/down): the page sends the new id order.
 export async function reorderPassagesAction(
   bookId: string,
@@ -149,15 +122,32 @@ export async function reorderPassagesFormAction(
   await reorderPassagesAction(bookId, orderedIds);
 }
 
-// Programmatic region set/clear from the segmenter.
-export async function setPassageRegionAction(
+// ---- PDF marks ------------------------------------------------------------
+
+export async function addMarkAction(
+  bookId: string,
+  page: number,
+  frac: number,
+): Promise<ActionResult & { id?: string }> {
+  try {
+    const ownerId = await requireUserId();
+    const mark = await createMark(ownerId, { bookId, page, frac });
+    revalidatePath(`/books/${bookId}`);
+    return { ok: true, id: mark.id };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function moveMarkAction(
   id: string,
   bookId: string,
-  region: { startPage: number; startFrac: number; endPage: number; endFrac: number },
+  page: number,
+  frac: number,
 ): Promise<ActionResult> {
   try {
     const ownerId = await requireUserId();
-    await setPassageRegion(ownerId, id, region);
+    await updateMark(ownerId, id, { page, frac });
     revalidatePath(`/books/${bookId}`);
     return { ok: true };
   } catch (e) {
@@ -165,13 +155,10 @@ export async function setPassageRegionAction(
   }
 }
 
-export async function clearPassageRegionAction(
-  id: string,
-  bookId: string,
-): Promise<ActionResult> {
+export async function removeMarkAction(id: string, bookId: string): Promise<ActionResult> {
   try {
     const ownerId = await requireUserId();
-    await clearPassageRegion(ownerId, id);
+    await deleteMark(ownerId, id);
     revalidatePath(`/books/${bookId}`);
     return { ok: true };
   } catch (e) {
