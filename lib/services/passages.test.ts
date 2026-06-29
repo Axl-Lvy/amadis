@@ -5,6 +5,8 @@ import {
   clearPassageRegion,
   createPassage,
   deletePassage,
+  getPassage,
+  listPassages,
   reorderPassages,
   setPassageRegion,
   updatePassage,
@@ -44,6 +46,106 @@ describe("createPassage", () => {
     await createPassage("owner-1", { bookId: "b1", title: "Titre", text: "é" });
     expect(prisma.passage.create).toHaveBeenCalledWith({
       data: { ownerId: "owner-1", bookId: "b1", number: 5, title: "Titre", text: "é" },
+    });
+  });
+});
+
+describe("createPassage (numbering & region)", () => {
+  it("starts numbering at 1 when the book has no passages yet", async () => {
+    ownBook();
+    prisma.passage.aggregate.mockResolvedValue({ _max: { number: null } } as never);
+    prisma.passage.create.mockResolvedValue({ id: "p1" } as never);
+    await createPassage("owner-1", { bookId: "b1" });
+    expect(prisma.passage.aggregate).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { ownerId: "owner-1", bookId: "b1" } }),
+    );
+    expect(prisma.passage.create).toHaveBeenCalledWith({
+      data: { ownerId: "owner-1", bookId: "b1", number: 1, title: "", text: "" },
+    });
+  });
+
+  it("writes the region fields when a valid region is supplied", async () => {
+    ownBook();
+    prisma.passage.create.mockResolvedValue({ id: "p1" } as never);
+    await createPassage("owner-1", {
+      bookId: "b1",
+      number: 2,
+      region: { startPage: 3, startFrac: 0.1, endPage: 4, endFrac: 0.9 },
+    });
+    expect(prisma.passage.aggregate).not.toHaveBeenCalled();
+    expect(prisma.passage.create).toHaveBeenCalledWith({
+      data: {
+        ownerId: "owner-1",
+        bookId: "b1",
+        number: 2,
+        title: "",
+        text: "",
+        startPage: 3,
+        startFrac: 0.1,
+        endPage: 4,
+        endFrac: 0.9,
+      },
+    });
+  });
+
+  it("rejects an invalid region without writing", async () => {
+    ownBook();
+    await expect(
+      createPassage("owner-1", {
+        bookId: "b1",
+        number: 1,
+        region: { startPage: 0, startFrac: 0, endPage: 1, endFrac: 1 },
+      }),
+    ).rejects.toMatchObject({ code: "passageNumberInvalid" });
+    expect(prisma.passage.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects a negative explicit number", async () => {
+    ownBook();
+    await expect(
+      createPassage("owner-1", { bookId: "b1", number: -1 }),
+    ).rejects.toMatchObject({ code: "passageNumberInvalid" });
+    expect(prisma.passage.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("listPassages", () => {
+  it("confirms book ownership then lists the book's passages ordered by number", async () => {
+    ownBook();
+    prisma.passage.findMany.mockResolvedValue([] as never);
+    await listPassages("owner-1", "b1");
+    expect(prisma.book.findFirst).toHaveBeenCalledWith({
+      where: { id: "b1", ownerId: "owner-1" },
+    });
+    expect(prisma.passage.findMany).toHaveBeenCalledWith({
+      where: { ownerId: "owner-1", bookId: "b1" },
+      orderBy: { number: "asc" },
+    });
+  });
+
+  it("rejects when the parent book is not owned", async () => {
+    prisma.book.findFirst.mockResolvedValue(null as never);
+    await expect(listPassages("owner-1", "b1")).rejects.toMatchObject({
+      code: "bookNotFound",
+    });
+    expect(prisma.passage.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("getPassage", () => {
+  it("returns the owner's passage", async () => {
+    prisma.passage.findFirst.mockResolvedValue({ id: "p1", ownerId: "owner-1" } as never);
+    const out = await getPassage("owner-1", "p1");
+    expect(out).toMatchObject({ id: "p1" });
+    expect(prisma.passage.findFirst).toHaveBeenCalledWith({
+      where: { id: "p1", ownerId: "owner-1" },
+    });
+  });
+
+  it("throws when the passage is not owned", async () => {
+    prisma.passage.findFirst.mockResolvedValue(null as never);
+    await expect(getPassage("owner-1", "p1")).rejects.toMatchObject({
+      code: "passageNotFound",
     });
   });
 });

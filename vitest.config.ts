@@ -32,6 +32,10 @@ export default defineConfig({
         "**/layout.tsx",
         "**/page.tsx",
         "app/api/**",
+        // pdf.js / canvas / web-worker rendering that cannot run in jsdom — it is
+        // exercised by E2E (#5), not unit tests. Mirrored in sonar-project.properties.
+        "app/_components/pdf-document.tsx",
+        "app/(app)/books/[id]/book-pdf.tsx",
       ],
     },
   },

@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockDeep, mockReset } from "vitest-mock-extended";
 
-import { presignPut } from "@/lib/r2";
+import { presignGet, presignPut } from "@/lib/r2";
 
 import {
   attachVariantScan,
   createVariant,
   deleteVariant,
+  getVariant,
+  listVariants,
   presignVariantScanUpload,
+  presignVariantScanView,
   updateVariant,
 } from "./variants";
 
@@ -25,6 +28,42 @@ vi.mock("@/lib/r2", () => ({
 beforeEach(() => {
   mockReset(prisma);
   vi.clearAllMocks();
+});
+
+describe("listVariants", () => {
+  it("rejects when the passage is not owned", async () => {
+    prisma.passage.findFirst.mockResolvedValue(null as never);
+    await expect(listVariants("owner-1", "p1")).rejects.toMatchObject({
+      code: "passageNotFound",
+    });
+    expect(prisma.variant.findMany).not.toHaveBeenCalled();
+  });
+  it("lists the passage's variants oldest-first, owner-scoped", async () => {
+    prisma.passage.findFirst.mockResolvedValue({ id: "p1" } as never);
+    prisma.variant.findMany.mockResolvedValue([] as never);
+    await listVariants("owner-1", "p1");
+    expect(prisma.variant.findMany).toHaveBeenCalledWith({
+      where: { ownerId: "owner-1", passageId: "p1" },
+      orderBy: { createdAt: "asc" },
+    });
+  });
+});
+
+describe("getVariant", () => {
+  it("returns the owner's variant", async () => {
+    prisma.variant.findFirst.mockResolvedValue({ id: "v1", ownerId: "owner-1" } as never);
+    const out = await getVariant("owner-1", "v1");
+    expect(out).toMatchObject({ id: "v1" });
+    expect(prisma.variant.findFirst).toHaveBeenCalledWith({
+      where: { id: "v1", ownerId: "owner-1" },
+    });
+  });
+  it("throws when the variant is not owned", async () => {
+    prisma.variant.findFirst.mockResolvedValue(null as never);
+    await expect(getVariant("owner-1", "v1")).rejects.toMatchObject({
+      code: "variantNotFound",
+    });
+  });
 });
 
 describe("createVariant", () => {
@@ -111,5 +150,29 @@ describe("attachVariantScan", () => {
     await expect(
       attachVariantScan("owner-1", "v1", "owner-1/p1/variant/v1/x.png"),
     ).rejects.toMatchObject({ code: "variantNotFound" });
+  });
+});
+
+describe("presignVariantScanView", () => {
+  it("throws when the variant is not owned", async () => {
+    prisma.variant.findFirst.mockResolvedValue(null as never);
+    await expect(presignVariantScanView("owner-1", "v1")).rejects.toMatchObject({
+      code: "variantNotFound",
+    });
+    expect(presignGet).not.toHaveBeenCalled();
+  });
+
+  it("returns null when no scan is attached", async () => {
+    prisma.variant.findFirst.mockResolvedValue({ scanKey: null } as never);
+    await expect(presignVariantScanView("owner-1", "v1")).resolves.toBeNull();
+    expect(presignGet).not.toHaveBeenCalled();
+  });
+
+  it("signs a GET for the stored scan key", async () => {
+    prisma.variant.findFirst.mockResolvedValue({
+      scanKey: "owner-1/p1/variant/v1/x.png",
+    } as never);
+    await expect(presignVariantScanView("owner-1", "v1")).resolves.toBe("https://signed/get");
+    expect(presignGet).toHaveBeenCalledWith("owner-1/p1/variant/v1/x.png");
   });
 });

@@ -5,9 +5,11 @@ import {
   createTag,
   deleteTag,
   getTagPath,
+  listAllTags,
   rankByQuery,
   renameTag,
   searchChildren,
+  searchRootTags,
   searchRootTypes,
   tagPath,
   type TagNode,
@@ -49,12 +51,45 @@ describe("searchRootTypes", () => {
   });
 });
 
+describe("searchRootTags", () => {
+  it("queries owner roots of a type and ranks by name", async () => {
+    prisma.tag.findMany.mockResolvedValue([
+      { id: "t1", parentId: null, type: "pos", name: "adverb" },
+      { id: "t2", parentId: null, type: "pos", name: "verb" },
+    ] as never);
+    const out = await searchRootTags("owner-1", "pos", "verb");
+    expect(prisma.tag.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { ownerId: "owner-1", parentId: null, type: "pos" },
+      }),
+    );
+    // "verb" is a prefix match (rank 0); "adverb" contains "verb" (rank 1).
+    expect(out.map((t) => t.name)).toEqual(["verb", "adverb"]);
+  });
+});
+
 describe("searchChildren", () => {
   it("rejects when the parent is not owned", async () => {
     prisma.tag.findFirst.mockResolvedValue(null as never);
     await expect(searchChildren("owner-1", "parent", "")).rejects.toMatchObject({
       code: "tagNotFound",
     });
+  });
+
+  it("confirms the parent then ranks its children by name", async () => {
+    prisma.tag.findFirst.mockResolvedValue({ id: "parent" } as never);
+    prisma.tag.findMany.mockResolvedValue([
+      { id: "c1", parentId: "parent", type: null, name: "plural" },
+      { id: "c2", parentId: "parent", type: null, name: "singular" },
+    ] as never);
+    const out = await searchChildren("owner-1", "parent", "sing");
+    expect(prisma.tag.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "parent", ownerId: "owner-1" } }),
+    );
+    expect(prisma.tag.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { ownerId: "owner-1", parentId: "parent" } }),
+    );
+    expect(out.map((t) => t.name)).toEqual(["singular"]);
   });
 });
 
@@ -105,6 +140,68 @@ describe("createTag", () => {
       }),
     );
   });
+
+  it("creates a typeless sub-tag under an owned parent", async () => {
+    // 1st findFirst: parent ownership check (owned). 2nd: find-or-create lookup (none).
+    prisma.tag.findFirst
+      .mockResolvedValueOnce({ id: "parent" } as never)
+      .mockResolvedValueOnce(null as never);
+    prisma.tag.create.mockResolvedValue({
+      id: "child-1",
+      parentId: "parent",
+      type: null,
+      name: "plural",
+    } as never);
+    const node = await createTag("owner-1", { name: " plural ", parentId: "parent" });
+    expect(node.id).toBe("child-1");
+    expect(prisma.tag.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { ownerId: "owner-1", parentId: "parent", type: null, name: "plural" },
+      }),
+    );
+  });
+
+  it("recovers from a concurrent-create P2002 by returning the now-existing row", async () => {
+    // parent ownership ok, no existing node, create races (P2002), re-lookup finds it.
+    prisma.tag.findFirst
+      .mockResolvedValueOnce({ id: "parent" } as never)
+      .mockResolvedValueOnce(null as never)
+      .mockResolvedValueOnce({
+        id: "child-raced",
+        parentId: "parent",
+        type: null,
+        name: "plural",
+      } as never);
+    prisma.tag.create.mockRejectedValue({ code: "P2002" } as never);
+    const node = await createTag("owner-1", { name: "plural", parentId: "parent" });
+    expect(node.id).toBe("child-raced");
+  });
+
+  it("rethrows a non-unique error from create", async () => {
+    prisma.tag.findFirst
+      .mockResolvedValueOnce({ id: "parent" } as never)
+      .mockResolvedValueOnce(null as never);
+    prisma.tag.create.mockRejectedValue({ code: "P2025" } as never);
+    await expect(
+      createTag("owner-1", { name: "plural", parentId: "parent" }),
+    ).rejects.toMatchObject({ code: "P2025" });
+  });
+});
+
+describe("listAllTags", () => {
+  it("returns every tag the caller owns, ordered by type then name", async () => {
+    prisma.tag.findMany.mockResolvedValue([
+      { id: "a", parentId: null, type: "pos", name: "Noun" },
+    ] as never);
+    const out = await listAllTags("owner-1");
+    expect(prisma.tag.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { ownerId: "owner-1" },
+        orderBy: [{ type: "asc" }, { name: "asc" }],
+      }),
+    );
+    expect(out).toHaveLength(1);
+  });
 });
 
 describe("renameTag / deleteTag", () => {
@@ -138,6 +235,13 @@ describe("getTagPath", () => {
     expect(prisma.tag.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "c", ownerId: "owner-1" } }),
     );
+  });
+
+  it("throws when a node in the chain is not owned", async () => {
+    prisma.tag.findFirst.mockResolvedValue(null as never);
+    await expect(getTagPath("owner-1", "missing")).rejects.toMatchObject({
+      code: "tagNotFound",
+    });
   });
 });
 
