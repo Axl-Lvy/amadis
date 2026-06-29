@@ -11,7 +11,6 @@ import {
   createVariant,
   deleteVariant,
   presignVariantScanUpload,
-  presignVariantScanView,
   updateVariant,
 } from "./variant-actions";
 import styles from "./variants-panel.module.css";
@@ -382,19 +381,11 @@ function VariantScan({
       return;
     }
     setError(null);
-    startTransition(async () => {
-      const res = await presignVariantScanView(variant.id);
-      if (!res.ok) {
-        setError(res.error);
-        return;
-      }
-      if (!res.url) {
-        setError(t("noScan"));
-        return;
-      }
-      setViewUrl(res.url);
-      setViewing(true);
-    });
+    // Same-origin owner-scoped proxy stream (no-store), so both image and PDF
+    // scans render without R2 CORS — the route resolves the current scanKey, so
+    // the URL stays stable across re-uploads.
+    setViewUrl(`/variants/${variant.id}/scan`);
+    setViewing(true);
   }
 
   const pdf = isPdfKey(variant.scanKey);
@@ -439,7 +430,7 @@ function VariantScan({
           {pdf ? (
             <PdfDocument url={viewUrl} />
           ) : (
-            // Presigned URL rotates, so a plain img avoids next/image caching.
+            // Owner-scoped same-origin proxy stream; a plain img avoids next/image.
             // eslint-disable-next-line @next/next/no-img-element
             <img
               className={styles.scanImage}

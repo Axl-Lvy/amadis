@@ -480,6 +480,10 @@ function Folio({
     const onMouseUp = () => {
       const sel = globalThis.getSelection();
       if (!sel || sel.isCollapsed) return;
+      // Ignore a drag that starts or ends outside this folio (e.g. one that
+      // crosses from the title folio into the text folio) so a span is only ever
+      // inscribed from an in-folio selection.
+      if (!folio.contains(sel.anchorNode) || !folio.contains(sel.focusNode)) return;
       let min = Infinity;
       let max = -1;
       folio.querySelectorAll<HTMLElement>("[data-cp]").forEach((el) => {
@@ -511,7 +515,12 @@ function Folio({
     if (!editing || editing.mode !== "edit") return;
     const folio = folioRef.current;
     if (!folio) return;
-    const first = folio.querySelector<HTMLElement>(`[data-cp="${editing.start}"]`);
+    // Anchor to the placement's start cell; if it is gone (e.g. the text was
+    // shortened below a stale offset), fall back to the first cell so the panel
+    // still appears in view rather than off-screen.
+    const first =
+      folio.querySelector<HTMLElement>(`[data-cp="${editing.start}"]`) ??
+      folio.querySelector<HTMLElement>("[data-cp]");
     if (first) {
       const fr = folio.getBoundingClientRect();
       const r = first.getBoundingClientRect();
@@ -726,13 +735,19 @@ function InscribePanel({
   const [error, setError] = useState<string | null>(null);
 
   // Existing refs of the placement being edited (so removing a chip can delete
-  // the matching ref). Keyed by `${type}:${targetId}`.
+  // the matching ref). Keyed by `${type}:${targetId}`. `refsLoaded` gates Save in
+  // edit mode so reconciliation never runs against an empty (not-yet-loaded) set
+  // and drops a ref deletion. (createRef is also idempotent server-side.)
   const [refs, setRefs] = useState<RefView[]>([]);
+  const [refsLoaded, setRefsLoaded] = useState(editing.mode !== "edit");
   useEffect(() => {
     if (editing.mode !== "edit") return;
     let active = true;
     listRefsForPlacement(editing.id).then((r) => {
-      if (active) setRefs(r);
+      if (active) {
+        setRefs(r);
+        setRefsLoaded(true);
+      }
     });
     return () => {
       active = false;
@@ -806,6 +821,9 @@ function InscribePanel({
 
   function save() {
     setError(null);
+    // In edit mode, wait for the existing refs to load so reconciliation can see
+    // which ones to delete (the button is also disabled until then).
+    if (editing.mode === "edit" && !refsLoaded) return;
     const cleanDesc = description.trim();
     if (tagIds.length === 0 && !cleanDesc) {
       setError(t("panel.requireOne"));
@@ -844,20 +862,28 @@ function InscribePanel({
       const haveKeys = new Set(refs.map((r) => `${r.targetType}:${r.targetId}`));
       const wantKeys = new Set(wanted.map((m) => `${m.type}:${m.targetId}`));
 
-      // Create newly-added mentions.
+      // Create newly-added mentions (createRef is idempotent server-side).
       for (const m of wanted) {
         if (!haveKeys.has(`${m.type}:${m.targetId}`)) {
-          await createRef(bookId, passageId, {
+          const r = await createRef(bookId, passageId, {
             sourceId: placementId,
             targetType: m.type,
             targetId: m.targetId,
           });
+          if (!r.ok) {
+            setError(r.error);
+            return;
+          }
         }
       }
       // Delete refs whose token was removed.
       for (const r of refs) {
         if (!wantKeys.has(`${r.targetType}:${r.targetId}`)) {
-          await deleteRef(bookId, passageId, r.id);
+          const d = await deleteRef(bookId, passageId, r.id);
+          if (!d.ok) {
+            setError(d.error);
+            return;
+          }
         }
       }
 
@@ -961,7 +987,12 @@ function InscribePanel({
         <button type="button" className={styles.cancel} onClick={onCancel} disabled={isPending}>
           {tc("cancel")}
         </button>
-        <button type="button" className={styles.go} onClick={save} disabled={isPending}>
+        <button
+          type="button"
+          className={styles.go}
+          onClick={save}
+          disabled={isPending || (editing.mode === "edit" && !refsLoaded)}
+        >
           {editing.mode === "edit" ? tc("save") : t("panel.inscribe")}
         </button>
       </div>

@@ -89,10 +89,11 @@ export async function attachVariantScan(ownerId: string, variantId: string, key:
   if (!key.startsWith(`${ownerId}/${variant.passageId}/variant/${variantId}/`)) {
     throw new ServiceError("invalidScanKey");
   }
-  await prisma.variant.updateMany({
+  const res = await prisma.variant.updateMany({
     where: { id: variantId, ownerId },
     data: { scanKey: key },
   });
+  if (res.count === 0) throw new ServiceError("variantNotFound");
 }
 
 export async function presignVariantScanView(

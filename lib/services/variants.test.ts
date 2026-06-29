@@ -100,4 +100,16 @@ describe("attachVariantScan", () => {
       data: { scanKey: "owner-1/p1/variant/v1/x.png" },
     });
   });
+
+  it("throws when the variant row vanished between check and update", async () => {
+    prisma.variant.findFirst.mockResolvedValue({
+      id: "v1",
+      passageId: "p1",
+      ownerId: "owner-1",
+    } as never);
+    prisma.variant.updateMany.mockResolvedValue({ count: 0 } as never);
+    await expect(
+      attachVariantScan("owner-1", "v1", "owner-1/p1/variant/v1/x.png"),
+    ).rejects.toMatchObject({ code: "variantNotFound" });
+  });
 });

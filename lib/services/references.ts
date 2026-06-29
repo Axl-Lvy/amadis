@@ -53,6 +53,14 @@ export async function createRef(
 
   await assertTargetOwned(ownerId, targetType, input.targetId);
 
+  // A (source, targetType, target) mention maps 1:1 to a ref. Find-or-create so a
+  // double save (e.g. the editor reconciling before refs finished loading) can
+  // never accumulate duplicate rows.
+  const existing = await prisma.placementRef.findFirst({
+    where: { ownerId, sourceId: input.sourceId, targetType, targetId: input.targetId },
+  });
+  if (existing) return existing;
+
   return prisma.placementRef.create({
     data: { ownerId, sourceId: input.sourceId, targetType, targetId: input.targetId },
   });

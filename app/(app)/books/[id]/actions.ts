@@ -109,15 +109,15 @@ export async function createPassageForRegionAction(input: {
 }): Promise<ActionResult> {
   try {
     const ownerId = await requireUserId();
-    const passage = await createPassage(ownerId, {
+    // Atomic: the region is written in the same create, so a bad region never
+    // leaves an orphan numbered passage behind.
+    await createPassage(ownerId, {
       bookId: input.bookId,
       number: input.number,
       title: input.title,
       text: input.text,
+      region: input.region,
     });
-    if (input.region) {
-      await setPassageRegion(ownerId, passage.id, input.region);
-    }
     revalidatePath(`/books/${input.bookId}`);
     return { ok: true };
   } catch (e) {

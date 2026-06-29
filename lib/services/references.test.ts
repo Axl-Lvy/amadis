@@ -45,6 +45,19 @@ describe("createRef", () => {
       data: { ownerId: "owner-1", sourceId: "pl1", targetType: "PASSAGE", targetId: "p2" },
     });
   });
+
+  it("is idempotent: returns the existing ref without creating a duplicate", async () => {
+    prisma.placement.findFirst.mockResolvedValue({ id: "pl1" } as never);
+    prisma.passage.findFirst.mockResolvedValue({ id: "p2" } as never);
+    prisma.placementRef.findFirst.mockResolvedValue({ id: "existing-ref" } as never);
+    const ref = await createRef("owner-1", {
+      sourceId: "pl1",
+      targetType: "PASSAGE",
+      targetId: "p2",
+    });
+    expect(ref).toMatchObject({ id: "existing-ref" });
+    expect(prisma.placementRef.create).not.toHaveBeenCalled();
+  });
 });
 
 describe("deleteRef", () => {

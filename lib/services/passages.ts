@@ -13,6 +13,7 @@ export type CreatePassageInput = {
   number?: number;
   title?: string;
   text?: string;
+  region?: PassageRegion;
 };
 export type UpdatePassageInput = {
   number?: number;
@@ -25,6 +26,24 @@ export type PassageRegion = {
   endPage: number;
   endFrac: number;
 };
+
+// Validate a continuous PDF region: 1-based pages, fractions in [0,1], and the
+// end never before the start. Throws passageNumberInvalid on a bad region.
+function assertRegion(region: PassageRegion) {
+  const { startPage, startFrac, endPage, endFrac } = region;
+  const fracOk = (f: number) => typeof f === "number" && f >= 0 && f <= 1;
+  const pageOk = (p: number) => Number.isInteger(p) && p >= 1;
+  if (
+    !pageOk(startPage) ||
+    !pageOk(endPage) ||
+    !fracOk(startFrac) ||
+    !fracOk(endFrac) ||
+    endPage < startPage ||
+    (endPage === startPage && endFrac < startFrac)
+  ) {
+    throw new ServiceError("passageNumberInvalid");
+  }
+}
 
 // List a book's passages ordered by number (book ownership confirmed first).
 export async function listPassages(ownerId: string, bookId: string) {
@@ -55,6 +74,7 @@ export async function createPassage(ownerId: string, input: CreatePassageInput) 
   if (!Number.isInteger(number) || number < 0) {
     throw new ServiceError("passageNumberInvalid");
   }
+  if (input.region) assertRegion(input.region);
 
   return prisma.passage.create({
     data: {
@@ -63,6 +83,14 @@ export async function createPassage(ownerId: string, input: CreatePassageInput) 
       number,
       title: toNFC(input.title ?? ""),
       text: toNFC(input.text ?? ""),
+      ...(input.region
+        ? {
+            startPage: input.region.startPage,
+            startFrac: input.region.startFrac,
+            endPage: input.region.endPage,
+            endFrac: input.region.endFrac,
+          }
+        : {}),
     },
   });
 }
@@ -115,22 +143,15 @@ export async function setPassageRegion(
   id: string,
   region: PassageRegion,
 ) {
-  const { startPage, startFrac, endPage, endFrac } = region;
-  const fracOk = (f: number) => typeof f === "number" && f >= 0 && f <= 1;
-  const pageOk = (p: number) => Number.isInteger(p) && p >= 1;
-  if (
-    !pageOk(startPage) ||
-    !pageOk(endPage) ||
-    !fracOk(startFrac) ||
-    !fracOk(endFrac) ||
-    endPage < startPage ||
-    (endPage === startPage && endFrac < startFrac)
-  ) {
-    throw new ServiceError("passageNumberInvalid");
-  }
+  assertRegion(region);
   const res = await prisma.passage.updateMany({
     where: { id, ownerId },
-    data: { startPage, startFrac, endPage, endFrac },
+    data: {
+      startPage: region.startPage,
+      startFrac: region.startFrac,
+      endPage: region.endPage,
+      endFrac: region.endFrac,
+    },
   });
   if (res.count === 0) throw new ServiceError("passageNotFound");
 }

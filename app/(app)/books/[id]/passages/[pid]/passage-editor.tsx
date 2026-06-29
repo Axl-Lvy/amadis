@@ -34,12 +34,15 @@ export function PassageEditor({ bookId, passage }: Readonly<PassageEditorProps>)
   const [pending, startTransition] = useTransition();
 
   function save() {
-    const parsed = Number(number);
+    // A blank number means "leave unchanged" (Number("") is 0, which would
+    // silently renumber the passage to 0); only send a parsed finite number.
+    const raw = number.trim();
+    const parsed = raw === "" ? undefined : Number(raw);
     setError(null);
     setSaved(false);
     startTransition(async () => {
       const res = await updatePassageAction(passage.id, bookId, {
-        number: Number.isFinite(parsed) ? parsed : undefined,
+        number: parsed !== undefined && Number.isFinite(parsed) ? parsed : undefined,
         title,
         text,
       });
