@@ -34,29 +34,32 @@ async function configureWorker(): Promise<typeof import("pdfjs-dist")> {
   return pdfjs;
 }
 
-// Continuous-scroll PDF renderer. Renders each page to a canvas inside a single
-// relative "pages host"; geometry is measured host-relative AFTER the pages are
-// in the DOM (fixing the old offset bug), and the optional overlay is rendered
-// inside that same host so coordinate origins match.
 export function PdfPages({ url, onPointClick, onGeometry, overlay }: Readonly<Props>) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const pagesRef = useRef<HTMLDivElement>(null);
   const [geometry, setGeometry] = useState<PdfGeometry | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
+  // Always call the latest onGeometry (resize fires from a mount-only effect).
+  const onGeometryRef = useRef(onGeometry);
+  useEffect(() => {
+    onGeometryRef.current = onGeometry;
+  }, [onGeometry]);
+
   function measure() {
-    const host = hostRef.current;
-    if (!host) return;
-    const wrappers = Array.from(host.querySelectorAll<HTMLElement>("[data-page]"));
+    const pages = pagesRef.current;
+    if (!pages) return;
+    const wrappers = Array.from(pages.querySelectorAll<HTMLElement>("[data-page]"));
     if (wrappers.length === 0) return;
     const g: PdfGeometry = {
       pageTops: wrappers.map((w) => w.offsetTop),
       pageHeights: wrappers.map((w) => w.offsetHeight),
       pageLefts: wrappers.map((w) => w.offsetLeft),
       pageWidths: wrappers.map((w) => w.offsetWidth),
-      contentHeight: host.scrollHeight,
+      contentHeight: pages.scrollHeight,
     };
     setGeometry(g);
-    onGeometry?.(g);
+    onGeometryRef.current?.(g);
   }
 
   useEffect(() => {
@@ -72,10 +75,10 @@ export function PdfPages({ url, onPointClick, onGeometry, overlay }: Readonly<Pr
         const doc = await task.promise;
         if (cancelled) return;
 
-        const host = hostRef.current;
-        if (!host) return;
-        host.replaceChildren();
-        const targetWidth = (host.clientWidth || 800) - 4;
+        const pages = pagesRef.current;
+        if (!pages) return;
+        pages.replaceChildren();
+        const targetWidth = (pages.clientWidth || 800) - 4;
 
         for (let n = 1; n <= doc.numPages; n++) {
           const page = await doc.getPage(n);
@@ -100,14 +103,13 @@ export function PdfPages({ url, onPointClick, onGeometry, overlay }: Readonly<Pr
           const ctx = canvas.getContext("2d");
           if (!ctx) continue;
           wrapper.appendChild(canvas);
-          host.appendChild(wrapper);
+          pages.appendChild(wrapper);
 
           await page.render({ canvasContext: ctx, viewport, canvas }).promise;
           if (cancelled) return;
         }
         if (cancelled) return;
         setStatus("ready");
-        // Measure AFTER the loading node is gone and pages are laid out.
         requestAnimationFrame(measure);
       } catch {
         if (!cancelled) setStatus("error");
@@ -121,17 +123,17 @@ export function PdfPages({ url, onPointClick, onGeometry, overlay }: Readonly<Pr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 
-  // Re-measure on container resize.
+  // Re-measure on resize (uses the latest onGeometry via the ref).
   useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
+    const pages = pagesRef.current;
+    if (!pages) return;
     const ro = new ResizeObserver(() => measure());
-    ro.observe(host);
+    ro.observe(pages);
     return () => ro.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Click-to-pick a point: frac is derived from the clicked page's own rect.
+  // Click-to-pick a point: frac from the clicked page's own rect.
   useEffect(() => {
     const host = hostRef.current;
     if (!host || !onPointClick) return;
@@ -159,8 +161,17 @@ export function PdfPages({ url, onPointClick, onGeometry, overlay }: Readonly<Pr
           ⚠
         </p>
       )}
-      <div ref={hostRef} style={{ position: "relative", cursor: onPointClick ? "crosshair" : "default" }} />
-      {geometry && overlay?.(geometry)}
+      {/* Positioned host: imperative canvases (pagesRef) + React-managed overlay
+          are siblings, so overlay content positioned with host-relative pageTops
+          shares this host's coordinate origin, and replaceChildren() on pagesRef
+          never touches the React overlay. */}
+      <div
+        ref={hostRef}
+        style={{ position: "relative", cursor: onPointClick ? "crosshair" : "default" }}
+      >
+        <div ref={pagesRef} />
+        {geometry && overlay?.(geometry)}
+      </div>
     </div>
   );
 }
