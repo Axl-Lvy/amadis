@@ -252,6 +252,8 @@
     "refSourceNotFound": "Source de la référence introuvable",
     "refTargetNotFound": "Cible de la référence introuvable",
     "invalidTargetType": "Type de cible de référence invalide",
+    "markInvalid": "Position de repère invalide",
+    "markNotFound": "Repère introuvable",
     "uploadFailed": "Échec du téléversement",
     "uploadFailedStatus": "Échec du téléversement ({status})"
   }

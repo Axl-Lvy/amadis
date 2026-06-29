@@ -21,7 +21,9 @@ export type ServiceErrorCode =
   | "invalidPageCount"
   | "refSourceNotFound"
   | "refTargetNotFound"
-  | "invalidTargetType";
+  | "invalidTargetType"
+  | "markInvalid"
+  | "markNotFound";
 
 export class ServiceError extends Error {
   constructor(

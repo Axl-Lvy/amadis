@@ -252,6 +252,8 @@
     "refSourceNotFound": "Reference source not found",
     "refTargetNotFound": "Reference target not found",
     "invalidTargetType": "Invalid reference target type",
+    "markInvalid": "Invalid mark position",
+    "markNotFound": "Mark not found",
     "uploadFailed": "Upload failed",
     "uploadFailedStatus": "Upload failed ({status})"
   }
