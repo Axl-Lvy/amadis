@@ -33,6 +33,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "books": "Books",
+    "tags": "Tags",
     "signIn": "Sign in",
     "signOut": "Sign out",
     "openNavigation": "Open navigation"
@@ -69,6 +70,164 @@
       "tags": "tags",
       "placements": "placements"
     }
+  },
+  "books": {
+    "title": "Books",
+    "count": "{count, plural, one {# book} other {# books}}",
+    "newBook": "New book",
+    "empty": "No books yet. Create your first one above.",
+    "passageCount": "{count, plural, one {# passage} other {# passages}}",
+    "pdfBadge": "{pages, plural, one {# page} other {# pages}}",
+    "hasPdf": "PDF",
+    "deleteAria": "Delete {title}",
+    "noAuthor": "No author",
+    "pdfSection": "PDF & segmentation",
+    "fields": {
+      "title": "Title",
+      "author": "Author",
+      "titlePlaceholder": "e.g. Chanson de Roland",
+      "authorPlaceholder": "Optional"
+    }
+  },
+  "passages": {
+    "title": "Passages",
+    "newPassage": "New passage",
+    "empty": "No passages yet. Add one above or mark a region on the PDF.",
+    "untitled": "Untitled",
+    "rowTitle": "{number}. {title}",
+    "hasRegion": "Pages {startPage}–{endPage}",
+    "noRegion": "No PDF region",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "deleteAria": "Delete passage {number}",
+    "editTitle": "Edit passage",
+    "saved": "Saved",
+    "fields": {
+      "number": "No.",
+      "numberAuto": "Auto",
+      "title": "Title",
+      "titlePlaceholder": "Optional title",
+      "text": "Text",
+      "textPlaceholder": "The passage text…"
+    }
+  },
+  "pdf": {
+    "noPdf": "No PDF attached to this book yet.",
+    "uploadPdf": "Upload PDF",
+    "replacePdf": "Replace PDF",
+    "reading": "Reading PDF…",
+    "uploading": "Uploading…",
+    "saving": "Saving…",
+    "readFailed": "Could not read that PDF",
+    "uploadFailed": "Upload failed ({status})",
+    "segmentTitle": "Mark a passage region",
+    "segmentHint": "Click a start point on the page, then an end point. The two clicks define a continuous region that can span pages.",
+    "markStart": "Start",
+    "markEnd": "End",
+    "pointLabel": "p.{page} · {pct}%",
+    "assignTo": "Assign region to",
+    "newPassage": "New passage",
+    "passageOption": "{number}. {title}",
+    "assignRegion": "Assign region",
+    "clearMark": "Clear marks",
+    "regionsTitle": "Passage regions",
+    "noRegions": "No passage has a PDF region yet.",
+    "regionStartLabel": "§{number}",
+    "regionRange": "p.{startPage} · {startPct}% → p.{endPage} · {endPct}%",
+    "clearRegion": "Clear region",
+    "transcription": "Transcription",
+    "transcriptionPlaceholder": "Type the passage text for this region…",
+    "saveTranscription": "Save transcription"
+  },
+  "tagPicker": {
+    "hint": "Type a level, pick a match or press Enter to create. Add the deepest node as a tag.",
+    "unknownTag": "unknown tag",
+    "addSelection": "Add tag",
+    "resetDraft": "Reset",
+    "createOption": "Create “{name}”",
+    "removeTag": "Remove {path}",
+    "stage": {
+      "type": "Type",
+      "name": "Name",
+      "child": "Sub-tag"
+    },
+    "placeholder": {
+      "type": "e.g. POS, Morphology, Syntax…",
+      "name": "Choose or create a tag…",
+      "child": "Choose or create a sub-tag…"
+    }
+  },
+  "tags": {
+    "title": "Tags",
+    "subtitle": "{count, plural, =0 {No tags yet} one {# tag} other {# tags}}",
+    "empty": "No tags yet. Create a root tag above to start a tree.",
+    "newRoot": "New root tag",
+    "typeLabel": "Type",
+    "typePlaceholder": "Type (e.g. POS)",
+    "nameLabel": "Name",
+    "namePlaceholder": "Name (e.g. Noun)",
+    "renameLabel": "Rename tag",
+    "deleteAria": "Delete {name} and its sub-tags",
+    "addChildLabel": "Add a sub-tag",
+    "addChildPlaceholder": "Add a sub-tag…"
+  },
+  "annotator": {
+    "unknownTag": "unknown tag",
+    "folio": {
+      "title": "Title",
+      "text": "Text",
+      "noContent": "Nothing to annotate here yet."
+    },
+    "foot": {
+      "convention": "Spans are <b>code-point</b> offsets over NFC text.",
+      "codePoints": "{count, plural, one {# code point} other {# code points}}"
+    },
+    "inspector": {
+      "title": "{count, plural, =0 {Placements} one {# placement} other {# placements}}",
+      "empty": "Select text in the title or the text above to inscribe a placement.",
+      "emptySpan": "(no span text)",
+      "edit": "Edit placement",
+      "remove": "Remove placement"
+    },
+    "panel": {
+      "ariaLabel": "Inscribe a placement",
+      "createTitle": "Inscribe",
+      "editTitle": "Edit placement",
+      "inscribe": "Inscribe",
+      "requireOne": "Add at least one tag or a description.",
+      "descLabel": "Description",
+      "descPlaceholder": "Optional description…",
+      "addMention": "+ Reference",
+      "removeMention": "Remove reference to {label}",
+      "mentionSearchPlaceholder": "Search a passage, span or variant…",
+      "mentionNoResults": "No matches."
+    },
+    "mention": {
+      "PLACEMENT": "Span",
+      "PASSAGE": "Passage",
+      "VARIANT": "Variant",
+      "deadTarget": "This reference target no longer exists."
+    }
+  },
+  "variants": {
+    "title": "Alternative versions",
+    "empty": "No alternative versions yet.",
+    "addVariant": "Add a version",
+    "labelField": "Label",
+    "labelPlaceholder": "e.g. Manuscript A, Editor's reading",
+    "textField": "Transcribed text",
+    "textPlaceholder": "Type or paste this version's text…",
+    "untitled": "Untitled version",
+    "noText": "No text transcribed.",
+    "scan": "Scan",
+    "chooseScan": "Choose a scan file (image or PDF)",
+    "uploadScan": "Upload scan",
+    "viewScan": "View scan",
+    "hideScan": "Hide scan",
+    "noScan": "No scan attached.",
+    "scanAlt": "Scan of {label}",
+    "uploadFailed": "Upload failed",
+    "uploadFailedStatus": "Upload failed ({status})"
   },
   "errors": {
     "signInFailed": "Failed to sign in. Try again.",

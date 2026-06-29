@@ -1,0 +1,132 @@
+/* Component-local styling for the variants panel. Mirrors the Spectra theme:
+   dark base, light via [data-theme="light"] through the shared CSS variables. */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.variant {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.label {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--foreground);
+  margin: 0;
+  text-wrap: balance;
+}
+
+.labelEmpty {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.text {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+.textEmpty {
+  color: var(--faint);
+  font-style: italic;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.formRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: var(--font-serif);
+  line-height: 1.6;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.formActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.scan {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.scanRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.scanImage {
+  max-width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  display: block;
+}
+
+.scanFrame {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.error {
+  font-size: 13px;
+  color: var(--hue-4);
+  margin: 0;
+}
+
+.empty {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.fileInput {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  max-width: 100%;
+}

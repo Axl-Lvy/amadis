@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { rankByQuery, tagPath, type TagNode } from "@/lib/tag-tree";
+import { rankByQuery, type TagNode } from "@/lib/tag-tree";
 
 import { ServiceError } from "./errors";
 

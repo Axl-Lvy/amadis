@@ -33,6 +33,7 @@
   "nav": {
     "dashboard": "Tableau de bord",
     "books": "Livres",
+    "tags": "Étiquettes",
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",
     "openNavigation": "Ouvrir la navigation"
@@ -69,6 +70,164 @@
       "tags": "étiquettes",
       "placements": "placements"
     }
+  },
+  "books": {
+    "title": "Livres",
+    "count": "{count, plural, one {# livre} other {# livres}}",
+    "newBook": "Nouveau livre",
+    "empty": "Aucun livre pour l'instant. Créez le premier ci-dessus.",
+    "passageCount": "{count, plural, one {# passage} other {# passages}}",
+    "pdfBadge": "{pages, plural, one {# page} other {# pages}}",
+    "hasPdf": "PDF",
+    "deleteAria": "Supprimer {title}",
+    "noAuthor": "Sans auteur",
+    "pdfSection": "PDF et découpage",
+    "fields": {
+      "title": "Titre",
+      "author": "Auteur",
+      "titlePlaceholder": "ex. Chanson de Roland",
+      "authorPlaceholder": "Facultatif"
+    }
+  },
+  "passages": {
+    "title": "Passages",
+    "newPassage": "Nouveau passage",
+    "empty": "Aucun passage pour l'instant. Ajoutez-en un ci-dessus ou marquez une zone sur le PDF.",
+    "untitled": "Sans titre",
+    "rowTitle": "{number}. {title}",
+    "hasRegion": "Pages {startPage}–{endPage}",
+    "noRegion": "Aucune zone PDF",
+    "moveUp": "Monter",
+    "moveDown": "Descendre",
+    "deleteAria": "Supprimer le passage {number}",
+    "editTitle": "Modifier le passage",
+    "saved": "Enregistré",
+    "fields": {
+      "number": "N°",
+      "numberAuto": "Auto",
+      "title": "Titre",
+      "titlePlaceholder": "Titre facultatif",
+      "text": "Texte",
+      "textPlaceholder": "Le texte du passage…"
+    }
+  },
+  "pdf": {
+    "noPdf": "Aucun PDF n'est encore attaché à ce livre.",
+    "uploadPdf": "Téléverser un PDF",
+    "replacePdf": "Remplacer le PDF",
+    "reading": "Lecture du PDF…",
+    "uploading": "Téléversement…",
+    "saving": "Enregistrement…",
+    "readFailed": "Impossible de lire ce PDF",
+    "uploadFailed": "Échec du téléversement ({status})",
+    "segmentTitle": "Marquer une zone de passage",
+    "segmentHint": "Cliquez un point de début sur la page, puis un point de fin. Les deux clics définissent une zone continue pouvant s'étendre sur plusieurs pages.",
+    "markStart": "Début",
+    "markEnd": "Fin",
+    "pointLabel": "p.{page} · {pct} %",
+    "assignTo": "Affecter la zone à",
+    "newPassage": "Nouveau passage",
+    "passageOption": "{number}. {title}",
+    "assignRegion": "Affecter la zone",
+    "clearMark": "Effacer les marques",
+    "regionsTitle": "Zones des passages",
+    "noRegions": "Aucun passage n'a encore de zone PDF.",
+    "regionStartLabel": "§{number}",
+    "regionRange": "p.{startPage} · {startPct} % → p.{endPage} · {endPct} %",
+    "clearRegion": "Effacer la zone",
+    "transcription": "Transcription",
+    "transcriptionPlaceholder": "Saisissez le texte du passage pour cette zone…",
+    "saveTranscription": "Enregistrer la transcription"
+  },
+  "tagPicker": {
+    "hint": "Saisissez un niveau, choisissez une correspondance ou appuyez sur Entrée pour créer. Ajoutez le nœud le plus profond comme étiquette.",
+    "unknownTag": "étiquette inconnue",
+    "addSelection": "Ajouter l’étiquette",
+    "resetDraft": "Réinitialiser",
+    "createOption": "Créer « {name} »",
+    "removeTag": "Retirer {path}",
+    "stage": {
+      "type": "Type",
+      "name": "Nom",
+      "child": "Sous-étiquette"
+    },
+    "placeholder": {
+      "type": "p. ex. Catégorie, Morphologie, Syntaxe…",
+      "name": "Choisir ou créer une étiquette…",
+      "child": "Choisir ou créer une sous-étiquette…"
+    }
+  },
+  "tags": {
+    "title": "Étiquettes",
+    "subtitle": "{count, plural, =0 {Aucune étiquette} one {# étiquette} other {# étiquettes}}",
+    "empty": "Aucune étiquette. Créez une étiquette racine ci-dessus pour commencer un arbre.",
+    "newRoot": "Nouvelle étiquette racine",
+    "typeLabel": "Type",
+    "typePlaceholder": "Type (p. ex. Catégorie)",
+    "nameLabel": "Nom",
+    "namePlaceholder": "Nom (p. ex. Nom)",
+    "renameLabel": "Renommer l’étiquette",
+    "deleteAria": "Supprimer {name} et ses sous-étiquettes",
+    "addChildLabel": "Ajouter une sous-étiquette",
+    "addChildPlaceholder": "Ajouter une sous-étiquette…"
+  },
+  "annotator": {
+    "unknownTag": "étiquette inconnue",
+    "folio": {
+      "title": "Titre",
+      "text": "Texte",
+      "noContent": "Rien à annoter ici pour l’instant."
+    },
+    "foot": {
+      "convention": "Les empans sont des décalages en <b>points de code</b> sur le texte NFC.",
+      "codePoints": "{count, plural, one {# point de code} other {# points de code}}"
+    },
+    "inspector": {
+      "title": "{count, plural, =0 {Placements} one {# placement} other {# placements}}",
+      "empty": "Sélectionnez du texte dans le titre ou le texte ci-dessus pour inscrire un placement.",
+      "emptySpan": "(aucun texte d’empan)",
+      "edit": "Modifier le placement",
+      "remove": "Supprimer le placement"
+    },
+    "panel": {
+      "ariaLabel": "Inscrire un placement",
+      "createTitle": "Inscrire",
+      "editTitle": "Modifier le placement",
+      "inscribe": "Inscrire",
+      "requireOne": "Ajoutez au moins une étiquette ou une description.",
+      "descLabel": "Description",
+      "descPlaceholder": "Description facultative…",
+      "addMention": "+ Référence",
+      "removeMention": "Retirer la référence à {label}",
+      "mentionSearchPlaceholder": "Rechercher un passage, un empan ou une variante…",
+      "mentionNoResults": "Aucune correspondance."
+    },
+    "mention": {
+      "PLACEMENT": "Empan",
+      "PASSAGE": "Passage",
+      "VARIANT": "Variante",
+      "deadTarget": "Cette cible de référence n’existe plus."
+    }
+  },
+  "variants": {
+    "title": "Versions alternatives",
+    "empty": "Aucune version alternative pour l'instant.",
+    "addVariant": "Ajouter une version",
+    "labelField": "Libellé",
+    "labelPlaceholder": "p. ex. Manuscrit A, leçon de l'éditeur",
+    "textField": "Texte transcrit",
+    "textPlaceholder": "Saisissez ou collez le texte de cette version…",
+    "untitled": "Version sans titre",
+    "noText": "Aucun texte transcrit.",
+    "scan": "Numérisation",
+    "chooseScan": "Choisir un fichier numérisé (image ou PDF)",
+    "uploadScan": "Téléverser la numérisation",
+    "viewScan": "Voir la numérisation",
+    "hideScan": "Masquer la numérisation",
+    "noScan": "Aucune numérisation jointe.",
+    "scanAlt": "Numérisation de {label}",
+    "uploadFailed": "Échec du téléversement",
+    "uploadFailedStatus": "Échec du téléversement ({status})"
   },
   "errors": {
     "signInFailed": "Échec de la connexion. Réessayez.",
