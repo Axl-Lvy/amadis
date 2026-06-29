@@ -1,4 +1,5 @@
 import { toNFC } from "@/lib/offsets";
+import { remapPlacements } from "@/lib/offset-remap";
 import { prisma } from "@/lib/prisma";
 
 import { getBook } from "./books";
@@ -13,37 +14,12 @@ export type CreatePassageInput = {
   number?: number;
   title?: string;
   text?: string;
-  region?: PassageRegion;
 };
 export type UpdatePassageInput = {
   number?: number;
   title?: string;
   text?: string;
 };
-export type PassageRegion = {
-  startPage: number;
-  startFrac: number;
-  endPage: number;
-  endFrac: number;
-};
-
-// Validate a continuous PDF region: 1-based pages, fractions in [0,1], and the
-// end never before the start. Throws passageNumberInvalid on a bad region.
-function assertRegion(region: PassageRegion) {
-  const { startPage, startFrac, endPage, endFrac } = region;
-  const fracOk = (f: number) => typeof f === "number" && f >= 0 && f <= 1;
-  const pageOk = (p: number) => Number.isInteger(p) && p >= 1;
-  if (
-    !pageOk(startPage) ||
-    !pageOk(endPage) ||
-    !fracOk(startFrac) ||
-    !fracOk(endFrac) ||
-    endPage < startPage ||
-    (endPage === startPage && endFrac < startFrac)
-  ) {
-    throw new ServiceError("passageNumberInvalid");
-  }
-}
 
 // List a book's passages ordered by number (book ownership confirmed first).
 export async function listPassages(ownerId: string, bookId: string) {
@@ -74,7 +50,6 @@ export async function createPassage(ownerId: string, input: CreatePassageInput) 
   if (!Number.isInteger(number) || number < 0) {
     throw new ServiceError("passageNumberInvalid");
   }
-  if (input.region) assertRegion(input.region);
 
   return prisma.passage.create({
     data: {
@@ -83,23 +58,25 @@ export async function createPassage(ownerId: string, input: CreatePassageInput) 
       number,
       title: toNFC(input.title ?? ""),
       text: toNFC(input.text ?? ""),
-      ...(input.region
-        ? {
-            startPage: input.region.startPage,
-            startFrac: input.region.startFrac,
-            endPage: input.region.endPage,
-            endFrac: input.region.endFrac,
-          }
-        : {}),
     },
   });
 }
 
+// Update a passage's number / title / text. When title or text changes, the
+// field's placement spans are REMAPPED (not dropped) to follow the edit; spans
+// whose text was entirely deleted collapse and are removed. All in one
+// transaction so offsets never desync from the text.
 export async function updatePassage(
   ownerId: string,
   id: string,
   input: UpdatePassageInput,
 ) {
+  const existing = await prisma.passage.findFirst({
+    where: { id, ownerId },
+    select: { id: true, title: true, text: true },
+  });
+  if (!existing) throw new ServiceError("passageNotFound");
+
   const data: { number?: number; title?: string; text?: string } = {};
   if (input.number !== undefined) {
     if (!Number.isInteger(input.number) || input.number < 0) {
@@ -107,11 +84,55 @@ export async function updatePassage(
     }
     data.number = input.number;
   }
-  if (input.title !== undefined) data.title = toNFC(input.title);
-  if (input.text !== undefined) data.text = toNFC(input.text);
 
-  const res = await prisma.passage.updateMany({ where: { id, ownerId }, data });
-  if (res.count === 0) throw new ServiceError("passageNotFound");
+  const fieldEdits: { field: "TITLE" | "TEXT"; oldText: string; newText: string }[] = [];
+  if (input.title !== undefined) {
+    const next = toNFC(input.title);
+    data.title = next;
+    if (next !== existing.title) {
+      fieldEdits.push({ field: "TITLE", oldText: existing.title, newText: next });
+    }
+  }
+  if (input.text !== undefined) {
+    const next = toNFC(input.text);
+    data.text = next;
+    if (next !== existing.text) {
+      fieldEdits.push({ field: "TEXT", oldText: existing.text, newText: next });
+    }
+  }
+
+  // No text/title content change: a plain update is enough.
+  if (fieldEdits.length === 0) {
+    await prisma.passage.update({ where: { id }, data });
+    return;
+  }
+
+  // Compute remaps before opening the transaction.
+  const updates: { id: string; start: number; end: number }[] = [];
+  const drops: string[] = [];
+  for (const edit of fieldEdits) {
+    const spans = await prisma.placement.findMany({
+      where: { ownerId, passageId: id, field: edit.field },
+      select: { id: true, start: true, end: true },
+    });
+    const { updated, dropped } = remapPlacements(edit.oldText, edit.newText, spans);
+    for (const u of updated) {
+      // Skip no-op updates to keep the transaction lean.
+      const before = spans.find((s) => s.id === u.id);
+      if (!before || before.start !== u.start || before.end !== u.end) updates.push(u);
+    }
+    drops.push(...dropped);
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.passage.update({ where: { id }, data });
+    for (const u of updates) {
+      await tx.placement.update({ where: { id: u.id }, data: { start: u.start, end: u.end } });
+    }
+    if (drops.length > 0) {
+      await tx.placement.deleteMany({ where: { id: { in: drops }, ownerId } });
+    }
+  });
 }
 
 export async function deletePassage(ownerId: string, id: string) {
@@ -135,31 +156,4 @@ export async function reorderPassages(
       }),
     ),
   );
-}
-
-// Set / clear a passage's continuous PDF region (used by the segmenter, #21).
-export async function setPassageRegion(
-  ownerId: string,
-  id: string,
-  region: PassageRegion,
-) {
-  assertRegion(region);
-  const res = await prisma.passage.updateMany({
-    where: { id, ownerId },
-    data: {
-      startPage: region.startPage,
-      startFrac: region.startFrac,
-      endPage: region.endPage,
-      endFrac: region.endFrac,
-    },
-  });
-  if (res.count === 0) throw new ServiceError("passageNotFound");
-}
-
-export async function clearPassageRegion(ownerId: string, id: string) {
-  const res = await prisma.passage.updateMany({
-    where: { id, ownerId },
-    data: { startPage: null, startFrac: null, endPage: null, endFrac: null },
-  });
-  if (res.count === 0) throw new ServiceError("passageNotFound");
 }

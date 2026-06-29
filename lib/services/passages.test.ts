@@ -2,13 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockDeep, mockReset } from "vitest-mock-extended";
 
 import {
-  clearPassageRegion,
   createPassage,
   deletePassage,
   getPassage,
   listPassages,
   reorderPassages,
-  setPassageRegion,
   updatePassage,
 } from "./passages";
 
@@ -50,7 +48,7 @@ describe("createPassage", () => {
   });
 });
 
-describe("createPassage (numbering & region)", () => {
+describe("createPassage (numbering)", () => {
   it("starts numbering at 1 when the book has no passages yet", async () => {
     ownBook();
     prisma.passage.aggregate.mockResolvedValue({ _max: { number: null } } as never);
@@ -62,42 +60,6 @@ describe("createPassage (numbering & region)", () => {
     expect(prisma.passage.create).toHaveBeenCalledWith({
       data: { ownerId: "owner-1", bookId: "b1", number: 1, title: "", text: "" },
     });
-  });
-
-  it("writes the region fields when a valid region is supplied", async () => {
-    ownBook();
-    prisma.passage.create.mockResolvedValue({ id: "p1" } as never);
-    await createPassage("owner-1", {
-      bookId: "b1",
-      number: 2,
-      region: { startPage: 3, startFrac: 0.1, endPage: 4, endFrac: 0.9 },
-    });
-    expect(prisma.passage.aggregate).not.toHaveBeenCalled();
-    expect(prisma.passage.create).toHaveBeenCalledWith({
-      data: {
-        ownerId: "owner-1",
-        bookId: "b1",
-        number: 2,
-        title: "",
-        text: "",
-        startPage: 3,
-        startFrac: 0.1,
-        endPage: 4,
-        endFrac: 0.9,
-      },
-    });
-  });
-
-  it("rejects an invalid region without writing", async () => {
-    ownBook();
-    await expect(
-      createPassage("owner-1", {
-        bookId: "b1",
-        number: 1,
-        region: { startPage: 0, startFrac: 0, endPage: 1, endFrac: 1 },
-      }),
-    ).rejects.toMatchObject({ code: "passageNumberInvalid" });
-    expect(prisma.passage.create).not.toHaveBeenCalled();
   });
 
   it("rejects a negative explicit number", async () => {
@@ -151,18 +113,68 @@ describe("getPassage", () => {
 });
 
 describe("updatePassage", () => {
-  it("updates only the owner's passage and NFC-normalizes text", async () => {
-    prisma.passage.updateMany.mockResolvedValue({ count: 1 } as never);
-    await updatePassage("owner-1", "p1", { title: "X", text: "é" });
-    expect(prisma.passage.updateMany).toHaveBeenCalledWith({
-      where: { id: "p1", ownerId: "owner-1" },
-      data: { title: "X", text: "é" },
-    });
-  });
-  it("throws when nothing matched the owner", async () => {
-    prisma.passage.updateMany.mockResolvedValue({ count: 0 } as never);
+  function existing(text: string, title = "") {
+    prisma.passage.findFirst.mockResolvedValue({ id: "p1", title, text } as never);
+    prisma.$transaction.mockImplementation(
+      async (fn: (tx: typeof prisma) => unknown) => fn(prisma),
+    );
+    prisma.passage.update.mockResolvedValue({ id: "p1" } as never);
+  }
+
+  it("throws when the passage is not owned", async () => {
+    prisma.passage.findFirst.mockResolvedValue(null as never);
     await expect(updatePassage("owner-1", "p1", { title: "X" })).rejects.toMatchObject({
       code: "passageNotFound",
+    });
+  });
+
+  it("updates without touching placements when neither title nor text changes", async () => {
+    // title already "X" and text already "hello" -> no field edits -> no remap.
+    existing("hello", "X");
+    await updatePassage("owner-1", "p1", { title: "X", text: "hello" });
+    expect(prisma.passage.update).toHaveBeenCalledWith({
+      where: { id: "p1" },
+      data: { title: "X", text: "hello" },
+    });
+    expect(prisma.placement.findMany).not.toHaveBeenCalled();
+  });
+
+  it("remaps TEXT placements when the text changes and persists new offsets", async () => {
+    existing("abcde");
+    // insert "XY" at offset 2 -> "abXYcde"; placement [1,4) -> [1,6)
+    prisma.placement.findMany.mockResolvedValue([
+      { id: "pl1", start: 1, end: 4 },
+    ] as never);
+    prisma.placement.update.mockResolvedValue({} as never);
+    await updatePassage("owner-1", "p1", { text: "abXYcde" });
+    expect(prisma.placement.findMany).toHaveBeenCalledWith({
+      where: { ownerId: "owner-1", passageId: "p1", field: "TEXT" },
+      select: { id: true, start: true, end: true },
+    });
+    expect(prisma.placement.update).toHaveBeenCalledWith({
+      where: { id: "pl1" },
+      data: { start: 1, end: 6 },
+    });
+  });
+
+  it("deletes placements that collapse to nothing", async () => {
+    existing("abcdef");
+    // "abcdef" -> "af": delete "bcde"; placement [1,5) collapses
+    prisma.placement.findMany.mockResolvedValue([
+      { id: "pl1", start: 1, end: 5 },
+    ] as never);
+    prisma.placement.deleteMany.mockResolvedValue({ count: 1 } as never);
+    await updatePassage("owner-1", "p1", { text: "af" });
+    expect(prisma.placement.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: ["pl1"] }, ownerId: "owner-1" },
+    });
+    expect(prisma.placement.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid explicit number", async () => {
+    existing("x");
+    await expect(updatePassage("owner-1", "p1", { number: -1 })).rejects.toMatchObject({
+      code: "passageNumberInvalid",
     });
   });
 });
@@ -190,43 +202,6 @@ describe("reorderPassages", () => {
     expect(prisma.passage.updateMany).toHaveBeenNthCalledWith(2, {
       where: { id: "p1", ownerId: "owner-1", bookId: "b1" },
       data: { number: 2 },
-    });
-  });
-});
-
-describe("setPassageRegion", () => {
-  it("rejects a fraction outside [0,1]", async () => {
-    await expect(
-      setPassageRegion("owner-1", "p1", { startPage: 1, startFrac: 1.5, endPage: 2, endFrac: 0.2 }),
-    ).rejects.toMatchObject({ code: "passageNumberInvalid" });
-  });
-  it("rejects an end before the start", async () => {
-    await expect(
-      setPassageRegion("owner-1", "p1", { startPage: 5, startFrac: 0.5, endPage: 5, endFrac: 0.2 }),
-    ).rejects.toMatchObject({ code: "passageNumberInvalid" });
-  });
-  it("stores a valid multi-page region for the owner", async () => {
-    prisma.passage.updateMany.mockResolvedValue({ count: 1 } as never);
-    await setPassageRegion("owner-1", "p1", {
-      startPage: 5,
-      startFrac: 0.45,
-      endPage: 7,
-      endFrac: 0.25,
-    });
-    expect(prisma.passage.updateMany).toHaveBeenCalledWith({
-      where: { id: "p1", ownerId: "owner-1" },
-      data: { startPage: 5, startFrac: 0.45, endPage: 7, endFrac: 0.25 },
-    });
-  });
-});
-
-describe("clearPassageRegion", () => {
-  it("nulls the region for the owner", async () => {
-    prisma.passage.updateMany.mockResolvedValue({ count: 1 } as never);
-    await clearPassageRegion("owner-1", "p1");
-    expect(prisma.passage.updateMany).toHaveBeenCalledWith({
-      where: { id: "p1", ownerId: "owner-1" },
-      data: { startPage: null, startFrac: null, endPage: null, endFrac: null },
     });
   });
 });
