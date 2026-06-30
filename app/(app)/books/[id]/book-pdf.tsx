@@ -213,6 +213,7 @@ function AreasMode({
       <div
         ref={scrollerRef}
         onScroll={() => requestAnimationFrame(onScroll)}
+        className="pdf-areas-bleed"
         style={{
           position: "relative",
           height: "78vh",
@@ -420,11 +421,18 @@ function PassageBox({
       style={{
         height: fixedHeight ? BOX_H : undefined,
         minHeight: BOX_H,
-        overflow: "auto",
+        // The tile itself never scrolls — only its content area does, so the
+        // header (area label + edit toggle) stays pinned in view.
+        overflow: "hidden",
         position: "relative",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <div className="flex items-center justify-between gap-2" style={{ marginBottom: 8 }}>
+      <div
+        className="flex items-center justify-between gap-2"
+        style={{ marginBottom: 8, flex: "none" }}
+      >
         <span style={{ fontFamily: "var(--font-serif)", fontSize: 16 }}>
           {t("areaLabel", { number: passage.number })}
           {passage.title ? ` · ${passage.title}` : ""}
@@ -440,6 +448,7 @@ function PassageBox({
         </button>
       </div>
 
+      <div style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
       {editing ? (
         <div className="flex flex-col gap-2">
           <textarea
@@ -468,6 +477,7 @@ function PassageBox({
           placements={passage.placements}
         />
       )}
+      </div>
     </div>
   );
 }

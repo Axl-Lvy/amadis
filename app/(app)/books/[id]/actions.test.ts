@@ -28,6 +28,7 @@ vi.mock("@/lib/services/books", () => ({
 vi.mock("@/lib/services/passages", () => ({
   createPassage: vi.fn(),
   deletePassage: vi.fn(),
+  listPassages: vi.fn(),
   updatePassage: vi.fn(),
   reorderPassages: vi.fn(),
 }));
@@ -35,6 +36,7 @@ vi.mock("@/lib/services/marks", () => ({
   createMark: vi.fn(),
   updateMark: vi.fn(),
   deleteMark: vi.fn(),
+  listMarks: vi.fn(),
 }));
 vi.mock("@/lib/session", () => ({
   requireUserId: () => Promise.resolve("owner-1"),
@@ -52,10 +54,11 @@ import {
 import {
   createPassage,
   deletePassage,
+  listPassages,
   reorderPassages,
   updatePassage,
 } from "@/lib/services/passages";
-import { createMark, deleteMark, updateMark } from "@/lib/services/marks";
+import { createMark, deleteMark, listMarks, updateMark } from "@/lib/services/marks";
 import { revalidatePath } from "next/cache";
 
 function form(entries: Record<string, string>): FormData {
@@ -169,9 +172,25 @@ describe("reorderPassagesFormAction", () => {
 describe("mark actions", () => {
   it("addMarkAction returns the new id on success", async () => {
     vi.mocked(createMark).mockResolvedValue({ id: "m1" } as never);
+    // 1 mark -> 2 areas, already 2 passages: no top-up needed.
+    vi.mocked(listMarks).mockResolvedValue([{ id: "m1" }] as never);
+    vi.mocked(listPassages).mockResolvedValue([{ id: "p1" }, { id: "p2" }] as never);
     const res = await addMarkAction("b1", 2, 0.5);
     expect(res).toEqual({ ok: true, id: "m1" });
     expect(createMark).toHaveBeenCalledWith("owner-1", { bookId: "b1", page: 2, frac: 0.5 });
+    expect(createPassage).not.toHaveBeenCalled();
+  });
+
+  it("addMarkAction tops up empty passages to keep passages >= areas", async () => {
+    vi.mocked(createMark).mockResolvedValue({ id: "m1" } as never);
+    // 1 mark -> 2 areas, but only 1 passage: one empty passage must be created.
+    vi.mocked(listMarks).mockResolvedValue([{ id: "m1" }] as never);
+    vi.mocked(listPassages).mockResolvedValue([{ id: "p1" }] as never);
+    vi.mocked(createPassage).mockResolvedValue({ id: "p2" } as never);
+    const res = await addMarkAction("b1", 2, 0.5);
+    expect(res).toEqual({ ok: true, id: "m1" });
+    expect(createPassage).toHaveBeenCalledTimes(1);
+    expect(createPassage).toHaveBeenCalledWith("owner-1", { bookId: "b1" });
   });
 
   it("moveMarkAction succeeds and calls updateMark with correct args", async () => {

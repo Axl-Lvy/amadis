@@ -226,6 +226,14 @@ export function PassageAnnotator({
   const [editing, setEditing] = useState<Editing | null>(null);
   const [lit, setLit] = useState<string | null>(null);
 
+  // Close the inscribe panel: drop the panel state AND the native text selection.
+  // (Folio's render-prop `close` only clears the selection; the panel is gated on
+  // `editing`, so it must be reset here or the dialog can never be dismissed.)
+  const closePanel = useCallback(() => {
+    setEditing(null);
+    clearSelection();
+  }, []);
+
   // Resolved mention targets (href + existence) for the inspector's chips,
   // keyed by `${type}:${targetId}`. We load the refs of every placement whose
   // description carries a mention; resolveTarget (via listRefsForPlacement) gives
@@ -275,7 +283,7 @@ export function PassageAnnotator({
             setLit={setLit}
             onSelect={(start, end) => setEditing({ mode: "create", field: "TITLE", start, end })}
             editing={editing?.field === "TITLE" ? editing : null}
-            renderPanel={(close) => (
+            renderPanel={() => (
               <InscribePanel
                 key={editing?.mode === "edit" ? editing.id : "create-title"}
                 bookId={bookId}
@@ -285,10 +293,10 @@ export function PassageAnnotator({
                 editing={editing!}
                 existing={placements}
                 onDone={() => {
-                  close();
+                  closePanel();
                   startTransition(() => router.refresh());
                 }}
-                onCancel={close}
+                onCancel={closePanel}
               />
             )}
           />
@@ -302,7 +310,7 @@ export function PassageAnnotator({
             setLit={setLit}
             onSelect={(start, end) => setEditing({ mode: "create", field: "TEXT", start, end })}
             editing={editing?.field === "TEXT" ? editing : null}
-            renderPanel={(close) => (
+            renderPanel={() => (
               <InscribePanel
                 key={editing?.mode === "edit" ? editing.id : "create-text"}
                 bookId={bookId}
@@ -312,10 +320,10 @@ export function PassageAnnotator({
                 editing={editing!}
                 existing={placements}
                 onDone={() => {
-                  close();
+                  closePanel();
                   startTransition(() => router.refresh());
                 }}
-                onCancel={close}
+                onCancel={closePanel}
               />
             )}
           />
@@ -908,7 +916,17 @@ function InscribePanel({
   const src = sliceByCodePoint(fieldText, editing.start, editing.end);
 
   return (
-    <dialog open className={styles.inscribe} aria-label={t("panel.ariaLabel")}>
+    <dialog
+      open
+      className={styles.inscribe}
+      aria-label={t("panel.ariaLabel")}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onCancel();
+        }
+      }}
+    >
       <div className={styles.inscribeHead}>
         <span className={styles.inscribeTitle}>
           {editing.mode === "edit" ? t("panel.editTitle") : t("panel.createTitle")}

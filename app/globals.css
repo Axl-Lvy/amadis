@@ -226,6 +226,19 @@ body {
   max-width: 1200px;
   padding: 32px 36px 72px;
 }
+/* The PDF "areas" workspace breaks out of the 1200px content cap to fill the
+   main panel. shell-content is left-aligned, so the slack sits on the right;
+   width = viewport − sidebar(252) − left pad(36) − right gutter(36). */
+.pdf-areas-bleed {
+  width: calc(100vw - 324px);
+  max-width: calc(100vw - 324px);
+}
+@media (max-width: 860px) {
+  .pdf-areas-bleed {
+    width: 100%;
+    max-width: 100%;
+  }
+}
 .mobile-bar {
   display: none;
 }

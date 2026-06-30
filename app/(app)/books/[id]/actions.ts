@@ -14,10 +14,11 @@ import { isServiceError } from "@/lib/services/errors";
 import {
   createPassage,
   deletePassage,
+  listPassages,
   reorderPassages,
   updatePassage,
 } from "@/lib/services/passages";
-import { createMark, deleteMark, updateMark } from "@/lib/services/marks";
+import { createMark, deleteMark, listMarks, updateMark } from "@/lib/services/marks";
 
 // Book-detail mutations. Two flavours:
 //  - Plain `<form action>` create/delete may throw (the page re-renders).
@@ -132,6 +133,16 @@ export async function addMarkAction(
   try {
     const ownerId = await requireUserId();
     const mark = await createMark(ownerId, { bookId, page, frac });
+    // Keep the invariant passages >= areas (areas = marks + 1): adding a mark
+    // splits one area into two, so top up empty passages when there are too few.
+    const [allMarks, passages] = await Promise.all([
+      listMarks(ownerId, bookId),
+      listPassages(ownerId, bookId),
+    ]);
+    const need = allMarks.length + 1 - passages.length;
+    for (let i = 0; i < need; i++) {
+      await createPassage(ownerId, { bookId });
+    }
     revalidatePath(`/books/${bookId}`);
     return { ok: true, id: mark.id };
   } catch (e) {
