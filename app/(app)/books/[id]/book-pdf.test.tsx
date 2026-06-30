@@ -92,4 +92,20 @@ describe("AreasMode marks", () => {
     render(<BookPdf bookId="b1" hasPdf marks={[]} passages={passages} />);
     expect(screen.getByText("surplusPassages")).toBeInTheDocument();
   });
+
+  it("calls removeMarkAction with mark id and bookId when the remove button is clicked", async () => {
+    const { removeMarkAction } = await import("./actions");
+    render(
+      <BookPdf
+        bookId="b1"
+        hasPdf
+        marks={[{ id: "m1", page: 1, frac: 0.5 }]}
+        passages={passages}
+      />,
+    );
+    // The mocked PdfPages renders the overlay with fake geometry, so MarkLayer
+    // renders the mark with a ✕ button whose aria-label is t("removeMark") = "removeMark".
+    fireEvent.click(screen.getByRole("button", { name: "removeMark" }));
+    expect(removeMarkAction).toHaveBeenCalledWith("m1", "b1");
+  });
 });

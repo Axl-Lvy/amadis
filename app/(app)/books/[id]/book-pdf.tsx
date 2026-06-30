@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
+let tmpMarkSeq = 0;
+
 import { PdfPages } from "@/app/_components/pdf-document";
 import type { PdfGeometry, PdfPoint } from "@/app/_components/pdf-document";
 import { areaBounds, columnTranslate, focus } from "@/lib/pdf-areas";
@@ -144,7 +146,7 @@ function AreasMode({
   const surplus = passages.slice(areaCount);
 
   function addMark(point: PdfPoint) {
-    const optimistic: PdfMark = { id: `tmp-${point.page}-${point.frac}`, ...point };
+    const optimistic: PdfMark = { id: `tmp-${tmpMarkSeq++}`, ...point };
     setMarks((m) => [...m, optimistic]);
     startTransition(async () => {
       const res = await addMarkAction(bookId, point.page, point.frac);
@@ -162,8 +164,17 @@ function AreasMode({
     });
   }
 
-  function moveMark(id: string, point: PdfPoint) {
-    setMarks((m) => m.map((x) => (x.id === id ? { ...x, ...point } : x)));
+  // Visual-only during drag (no server write).
+  function dragMark(id: string, point: PdfPoint) {
+    setMarks((m) =>
+      m.map((x) => (x.id === id ? { ...x, page: point.page, frac: point.frac } : x)),
+    );
+  }
+  // Persist once on drop; revert to server marks on failure.
+  function commitMark(id: string, point: PdfPoint) {
+    setMarks((m) =>
+      m.map((x) => (x.id === id ? { ...x, page: point.page, frac: point.frac } : x)),
+    );
     startTransition(async () => {
       const res = await moveMarkAction(id, bookId, point.page, point.frac);
       if (res.ok) router.refresh();
@@ -187,6 +198,13 @@ function AreasMode({
     const target = columnTranslate(phi, BOX_H, BOX_GAP, scroller.clientHeight);
     column.style.transform = `translateY(${-target + scroller.scrollTop}px)`;
   }
+
+  // Re-run the scroll choreography when the marks (and thus area bounds) change.
+  useEffect(() => {
+    const id = requestAnimationFrame(onScroll);
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [marks]);
 
   return (
     <>
@@ -223,7 +241,8 @@ function AreasMode({
                 geometry={g}
                 marks={marks}
                 onRemove={removeMark}
-                onMove={moveMark}
+                onDrag={dragMark}
+                onCommit={commitMark}
                 removeLabel={t("removeMark")}
               />
             )}
@@ -256,13 +275,15 @@ function MarkLayer({
   geometry,
   marks,
   onRemove,
-  onMove,
+  onDrag,
+  onCommit,
   removeLabel,
 }: Readonly<{
   geometry: PdfGeometry;
   marks: PdfMark[];
   onRemove: (id: string) => void;
-  onMove: (id: string, point: PdfPoint) => void;
+  onDrag: (id: string, point: PdfPoint) => void;
+  onCommit: (id: string, point: PdfPoint) => void;
   removeLabel: string;
 }>) {
   function pointFromClientY(clientY: number, hostTop: number): PdfPoint {
@@ -291,8 +312,13 @@ function MarkLayer({
             onPointerDown={(e) => {
               e.preventDefault();
               const hostTop = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect().top;
-              const move = (ev: PointerEvent) => onMove(m.id, pointFromClientY(ev.clientY, hostTop));
+              let last = pointFromClientY(e.clientY, hostTop);
+              const move = (ev: PointerEvent) => {
+                last = pointFromClientY(ev.clientY, hostTop);
+                onDrag(m.id, last);
+              };
               const up = () => {
+                onCommit(m.id, last);
                 document.removeEventListener("pointermove", move);
                 document.removeEventListener("pointerup", up);
               };
