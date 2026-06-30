@@ -5,11 +5,17 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { PdfPages } from "@/app/_components/pdf-document";
+import type { PdfGeometry, PdfPoint } from "@/app/_components/pdf-document";
+import { areaBounds, columnTranslate, focus } from "@/lib/pdf-areas";
+import type { MarkPoint } from "@/lib/pdf-areas";
 import type { TagNode } from "@/lib/tag-tree";
 
 import {
+  addMarkAction,
   attachBookPdfAction,
+  moveMarkAction,
   presignBookPdfUploadAction,
+  removeMarkAction,
   updatePassageAction,
 } from "./actions";
 import {
@@ -111,19 +117,218 @@ function PdfView({
   );
 }
 
-// ---- Temporary AreasMode stub (Task 11 replaces this) --------------------
+// ---- AreasMode: two-column PDF + passages with mark overlay ---------------
 
 function AreasMode({
   bookId,
-  marks: _marks,
+  marks: initialMarks,
   passages,
 }: Readonly<{ bookId: string; marks: PdfMark[]; passages: PdfPassage[] }>) {
-  // Task 11 replaces this with the two-column choreographed layout.
+  const t = useTranslations("pdf");
+  const router = useRouter();
+  const [marks, setMarks] = useState<PdfMark[]>(initialMarks);
+  const [, startTransition] = useTransition();
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const columnRef = useRef<HTMLDivElement>(null);
+  const geomRef = useRef<PdfGeometry | null>(null);
+
+  // Keep optimistic local marks in sync when the server data changes.
+  // Intentional set-state-in-effect: syncing from a server-provided prop
+  // (initialMarks) that updates after router.refresh() — not derivable via
+  // memo, and the effect correctly runs only when the server value changes.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMarks(initialMarks), [initialMarks]);
+
+  const areaCount = marks.length + 1;
+  const aligned = passages.slice(0, areaCount);
+  const surplus = passages.slice(areaCount);
+
+  function addMark(point: PdfPoint) {
+    const optimistic: PdfMark = { id: `tmp-${point.page}-${point.frac}`, ...point };
+    setMarks((m) => [...m, optimistic]);
+    startTransition(async () => {
+      const res = await addMarkAction(bookId, point.page, point.frac);
+      if (res.ok) router.refresh();
+      else setMarks(initialMarks);
+    });
+  }
+
+  function removeMark(id: string) {
+    setMarks((m) => m.filter((x) => x.id !== id));
+    startTransition(async () => {
+      const res = await removeMarkAction(id, bookId);
+      if (res.ok) router.refresh();
+      else setMarks(initialMarks);
+    });
+  }
+
+  function moveMark(id: string, point: PdfPoint) {
+    setMarks((m) => m.map((x) => (x.id === id ? { ...x, ...point } : x)));
+    startTransition(async () => {
+      const res = await moveMarkAction(id, bookId, point.page, point.frac);
+      if (res.ok) router.refresh();
+      else setMarks(initialMarks);
+    });
+  }
+
+  // Scroll choreography: map PDF scroll -> right column translate.
+  function onScroll() {
+    const scroller = scrollerRef.current;
+    const column = columnRef.current;
+    const g = geomRef.current;
+    if (!scroller || !column || !g) return;
+    const bounds = areaBounds(
+      g.pageTops,
+      g.pageHeights,
+      marks as MarkPoint[],
+      g.contentHeight,
+    );
+    const phi = focus(scroller.scrollTop, scroller.clientHeight, bounds);
+    const target = columnTranslate(phi, BOX_H, BOX_GAP, scroller.clientHeight);
+    column.style.transform = `translateY(${-target + scroller.scrollTop}px)`;
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      <PdfPages url={`/books/${bookId}/pdf`} />
-      <PassagesColumn bookId={bookId} passages={passages} />
-    </div>
+    <>
+      <p className="muted" style={{ fontSize: 12 }}>
+        {t("marksHint")}
+      </p>
+      <div
+        ref={scrollerRef}
+        onScroll={() => requestAnimationFrame(onScroll)}
+        style={{
+          position: "relative",
+          height: "78vh",
+          overflow: "auto",
+          background: "var(--surface-2)",
+          border: "1px solid var(--line)",
+          borderRadius: 12,
+          padding: 12,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 16,
+          alignItems: "start",
+        }}
+      >
+        <div style={{ position: "relative" }}>
+          <PdfPages
+            url={`/books/${bookId}/pdf`}
+            onPointClick={addMark}
+            onGeometry={(g) => {
+              geomRef.current = g;
+              onScroll();
+            }}
+            overlay={(g) => (
+              <MarkLayer
+                geometry={g}
+                marks={marks}
+                onRemove={removeMark}
+                onMove={moveMark}
+                removeLabel={t("removeMark")}
+              />
+            )}
+          />
+        </div>
+
+        <div ref={columnRef} style={{ position: "relative", willChange: "transform" }}>
+          <div className="flex flex-col" style={{ gap: BOX_GAP }}>
+            {aligned.map((p) => (
+              <PassageBox key={p.id} bookId={bookId} passage={p} fixedHeight />
+            ))}
+          </div>
+          {surplus.length > 0 && (
+            <div className="flex flex-col" style={{ gap: BOX_GAP, marginTop: BOX_GAP }}>
+              <p className="section-label">{t("surplusPassages")}</p>
+              {surplus.map((p) => (
+                <PassageBox key={p.id} bookId={bookId} passage={p} fixedHeight />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ---- Mark boundary lines drawn over the pages host, with drag + remove ----
+
+function MarkLayer({
+  geometry,
+  marks,
+  onRemove,
+  onMove,
+  removeLabel,
+}: Readonly<{
+  geometry: PdfGeometry;
+  marks: PdfMark[];
+  onRemove: (id: string) => void;
+  onMove: (id: string, point: PdfPoint) => void;
+  removeLabel: string;
+}>) {
+  function pointFromClientY(clientY: number, hostTop: number): PdfPoint {
+    // Resolve which page the y falls in, in content space.
+    const y = clientY - hostTop;
+    let page = 1;
+    for (let i = 0; i < geometry.pageTops.length; i++) {
+      if (y >= geometry.pageTops[i]) page = i + 1;
+    }
+    const top = geometry.pageTops[page - 1];
+    const h = geometry.pageHeights[page - 1];
+    const frac = Math.min(1, Math.max(0, (y - top) / h));
+    return { page, frac };
+  }
+
+  return (
+    <>
+      {marks.map((m) => {
+        const top = geometry.pageTops[m.page - 1] + m.frac * geometry.pageHeights[m.page - 1];
+        const left = geometry.pageLefts[m.page - 1];
+        const width = geometry.pageWidths[m.page - 1];
+        return (
+          <div
+            key={m.id}
+            style={{ position: "absolute", left, top, width }}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              const hostTop = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect().top;
+              const move = (ev: PointerEvent) => onMove(m.id, pointFromClientY(ev.clientY, hostTop));
+              const up = () => {
+                document.removeEventListener("pointermove", move);
+                document.removeEventListener("pointerup", up);
+              };
+              document.addEventListener("pointermove", move);
+              document.addEventListener("pointerup", up);
+            }}
+          >
+            <div style={{ borderTop: "2px solid var(--accent)", cursor: "row-resize" }} />
+            <button
+              type="button"
+              aria-label={removeLabel}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove(m.id);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              style={{
+                position: "absolute",
+                right: 0,
+                top: -10,
+                fontSize: 12,
+                lineHeight: 1,
+                background: "var(--accent)",
+                color: "#fff",
+                border: 0,
+                borderRadius: 3,
+                padding: "1px 5px",
+                cursor: "pointer",
+              }}
+            >
+              ×
+            </button>
+          </div>
+        );
+      })}
+    </>
   );
 }
 

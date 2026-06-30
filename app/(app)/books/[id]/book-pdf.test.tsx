@@ -1,9 +1,32 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import type { ReactNode } from "react";
 
 // pdf.js can't run in jsdom: stub the renderer to a simple host.
 vi.mock("@/app/_components/pdf-document", () => ({
-  PdfPages: () => <div data-testid="pdf-pages" />,
+  PdfPages: ({
+    onPointClick,
+    overlay,
+  }: {
+    onPointClick?: (p: { page: number; frac: number }) => void;
+    overlay?: (g: unknown) => ReactNode;
+  }) => (
+    <div data-testid="pdf-pages">
+      <button
+        type="button"
+        data-testid="pdf-point"
+        onClick={() => onPointClick?.({ page: 1, frac: 0.5 })}
+      />
+      {/* Render the overlay with a fake geometry so marks/areas appear. */}
+      {overlay?.({
+        pageTops: [0],
+        pageHeights: [1000],
+        pageLefts: [0],
+        pageWidths: [600],
+        contentHeight: 1000,
+      })}
+    </div>
+  ),
 }));
 // next-intl: identity translator.
 vi.mock("next-intl", () => ({
@@ -45,5 +68,28 @@ describe("BookPdf view modes", () => {
     fireEvent.click(screen.getByText("viewPassages"));
     expect(screen.queryByTestId("pdf-pages")).not.toBeInTheDocument();
     expect(screen.getByTestId("annotator-p1")).toBeInTheDocument();
+  });
+});
+
+describe("AreasMode marks", () => {
+  beforeEach(() => {
+    // Clear view-mode preference so tests always start in areas mode.
+    globalThis.localStorage?.removeItem("pdf-view-mode:b1");
+  });
+
+  it("adds a mark when a page point is clicked", async () => {
+    const { addMarkAction } = await import("./actions");
+    // Drive the click through the mocked PdfPages by exposing onPointClick.
+    // Re-mock PdfPages for this block to call onPointClick on click.
+    // (Handled by the module mock below.)
+    render(<BookPdf bookId="b1" hasPdf marks={[]} passages={passages} />);
+    fireEvent.click(screen.getByTestId("pdf-point"));
+    expect(addMarkAction).toHaveBeenCalledWith("b1", 1, 0.5);
+  });
+
+  it("shows surplus passages after the PDF when there are more passages than areas", () => {
+    // 0 marks => 1 area => passage 1 aligns; passage 2 is surplus.
+    render(<BookPdf bookId="b1" hasPdf marks={[]} passages={passages} />);
+    expect(screen.getByText("surplusPassages")).toBeInTheDocument();
   });
 });
