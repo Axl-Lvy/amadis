@@ -7,14 +7,21 @@
     "hero": {
       "eyebrow": "Old French · digital philology",
       "heading": "Annotate the manuscript, layer by layer.",
-      "lede": "amadis is a reading room for Old French texts. Transcribe a folio, attach its scan, then gloss any word or passage across parts of speech, lemmas, morphology and meaning — each layer its own colour, stacked beneath the line.",
-      "openTextes": "Open my textes",
+      "lede": "amadis is a reading room for Old French texts. Build a book from a scanned PDF, segment it into passages, then place spans across the title and text — each carrying a tree of tags and a free description.",
+      "openBooks": "Open my books",
       "createAccount": "Create an account"
     }
   },
   "common": {
     "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
     "delete": "Delete",
+    "remove": "Remove",
+    "add": "Add",
+    "create": "Create",
+    "back": "Back",
+    "loading": "Loading…",
     "defaultUserName": "Scholar",
     "theme": {
       "switchToLightAria": "Switch to light theme",
@@ -25,7 +32,8 @@
   },
   "nav": {
     "dashboard": "Dashboard",
-    "textes": "Textes",
+    "books": "Books",
+    "tags": "Tags",
     "signIn": "Sign in",
     "signOut": "Sign out",
     "openNavigation": "Open navigation"
@@ -51,99 +59,193 @@
       "password": "Password"
     }
   },
-  "textes": {
-    "title": "Textes",
-    "corpusCount": "{count, plural, =0 {None in your corpus} one {# in your corpus} other {# in your corpus}}",
-    "newTexte": "New texte",
-    "myTextes": "My textes",
-    "empty": "No textes yet. Create one above to begin.",
-    "form": {
-      "referencePlaceholder": "Reference (e.g. Roland, ms. Oxford f.1r)",
-      "sourcePlaceholder": "Source (optional)",
-      "contentPlaceholder": "Paste a transcription (optional — you can scan first and transcribe later)",
-      "submit": "Create texte"
-    },
-    "list": {
-      "annotationCount": "{count, plural, one {# annotation} other {# annotations}}",
-      "hasScan": " · has scan"
-    }
-  },
   "dashboard": {
     "title": "Dashboard",
     "signedInAs": "Signed in as {name}",
-    "openMyTextes": "Open my textes",
+    "openBooks": "Open my books",
     "scholarCount": "{count, plural, one {# scholar on amadis · your work is private to you.} other {# scholars on amadis · your work is private to you.}}",
     "stats": {
-      "textes": "textes",
+      "books": "books",
+      "passages": "passages",
       "tags": "tags",
-      "annotations": "annotations"
+      "placements": "placements"
     }
   },
-  "texteDetail": {
-    "allTextes": "All textes",
-    "scan": {
-      "label": "Scan",
-      "alt": "Scan of {reference}",
-      "empty": "No scan uploaded yet."
-    },
-    "tags": {
-      "label": "Tags",
-      "layerPlaceholder": "layer (e.g. pos)",
-      "codePlaceholder": "code (e.g. NOUN)",
-      "labelPlaceholder": "label (optional)",
-      "addButton": "Add tag",
-      "empty": "No tags yet. Create one to start annotating."
-    },
-    "tallies": {
-      "perTag": "Per tag",
-      "perLayer": "Per layer",
-      "noAnnotations": "No annotations."
+  "books": {
+    "title": "Books",
+    "count": "{count, plural, one {# book} other {# books}}",
+    "newBook": "New book",
+    "empty": "No books yet. Create your first one above.",
+    "passageCount": "{count, plural, one {# passage} other {# passages}}",
+    "pdfBadge": "{pages, plural, one {# page} other {# pages}}",
+    "hasPdf": "PDF",
+    "deleteAria": "Delete {title}",
+    "noAuthor": "No author",
+    "pdfSection": "PDF & segmentation",
+    "fields": {
+      "title": "Title",
+      "author": "Author",
+      "titlePlaceholder": "e.g. Chanson de Roland",
+      "authorPlaceholder": "Optional"
     }
+  },
+  "passages": {
+    "title": "Passages",
+    "newPassage": "New passage",
+    "empty": "No passages yet. Add one above.",
+    "untitled": "Untitled",
+    "rowTitle": "{number}. {title}",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "deleteAria": "Delete passage {number}",
+    "editTitle": "Edit passage",
+    "saved": "Saved",
+    "fields": {
+      "number": "No.",
+      "numberAuto": "Auto",
+      "title": "Title",
+      "titlePlaceholder": "Optional title",
+      "text": "Text",
+      "textPlaceholder": "The passage text…"
+    }
+  },
+  "pdf": {
+    "noPdf": "No PDF attached to this book yet.",
+    "uploadPdf": "Upload PDF",
+    "replacePdf": "Replace PDF",
+    "reading": "Reading PDF…",
+    "uploading": "Uploading…",
+    "saving": "Saving…",
+    "readFailed": "Could not read that PDF",
+    "uploadFailed": "Upload failed ({status})",
+    "viewAreas": "PDF + areas",
+    "viewPassages": "Passages only",
+    "marksHint": "Click the page to add a boundary, drag a boundary to move it, ✕ to remove it.",
+    "addMark": "Add boundary",
+    "moveMark": "Move boundary",
+    "removeMark": "Remove boundary",
+    "areaLabel": "Area {number}",
+    "surplusPassages": "Passages beyond the PDF",
+    "editText": "Edit text",
+    "doneEditing": "Done",
+    "saveFailed": "Could not save"
+  },
+  "tagPicker": {
+    "hint": "Type a level, pick a match or press Enter to create. Add the deepest node as a tag.",
+    "unknownTag": "unknown tag",
+    "addSelection": "Add tag",
+    "resetDraft": "Reset",
+    "createOption": "Create “{name}”",
+    "removeTag": "Remove {path}",
+    "stage": {
+      "type": "Type",
+      "name": "Name",
+      "child": "Sub-tag"
+    },
+    "placeholder": {
+      "type": "e.g. POS, Morphology, Syntax…",
+      "name": "Choose or create a tag…",
+      "child": "Choose or create a sub-tag…"
+    }
+  },
+  "tags": {
+    "title": "Tags",
+    "subtitle": "{count, plural, =0 {No tags yet} one {# tag} other {# tags}}",
+    "empty": "No tags yet. Create a root tag above to start a tree.",
+    "newRoot": "New root tag",
+    "typeLabel": "Type",
+    "typePlaceholder": "Type (e.g. POS)",
+    "nameLabel": "Name",
+    "namePlaceholder": "Name (e.g. Noun)",
+    "renameLabel": "Rename tag",
+    "deleteAria": "Delete {name} and its sub-tags",
+    "addChildLabel": "Add a sub-tag",
+    "addChildPlaceholder": "Add a sub-tag…"
   },
   "annotator": {
-    "palette": {
-      "title": "Layers",
-      "empty": "None yet — create a tag below."
-    },
+    "unknownTag": "unknown tag",
     "folio": {
-      "eyebrow": "<b>Interlinear</b> · select a word or passage to gloss it · hover to trace",
-      "noContent": "No transcription yet. Add content to this texte to annotate it."
+      "title": "Title",
+      "text": "Text",
+      "noContent": "Nothing to annotate here yet."
     },
     "foot": {
-      "convention": "NFC · code-point offsets · [start, end)",
+      "convention": "Spans are <b>code-point</b> offsets over NFC text.",
       "codePoints": "{count, plural, one {# code point} other {# code points}}"
     },
-    "toolbar": {
-      "ariaLabel": "Inscribe a gloss",
-      "noTagHint": "Create a tag first to gloss.",
-      "tagAriaLabel": "Tag",
-      "noTagOption": "no tag",
-      "notePlaceholder": "note (optional)",
-      "inscribe": "Inscribe"
-    },
     "inspector": {
-      "title": "Apparatus · {count}",
-      "empty": "No glosses yet. Select text and pick a colour — each annotation lands on its own lane below the line.",
-      "removeGloss": "Remove gloss"
+      "title": "{count, plural, =0 {Placements} one {# placement} other {# placements}}",
+      "empty": "Select text in the title or the text above to inscribe a placement.",
+      "emptySpan": "(no span text)",
+      "edit": "Edit placement",
+      "remove": "Remove placement"
+    },
+    "panel": {
+      "ariaLabel": "Inscribe a placement",
+      "createTitle": "Inscribe",
+      "editTitle": "Edit placement",
+      "inscribe": "Inscribe",
+      "requireOne": "Add at least one tag or a description.",
+      "descLabel": "Description",
+      "descPlaceholder": "Optional description…",
+      "addMention": "+ Reference",
+      "removeMention": "Remove reference to {label}",
+      "mentionSearchPlaceholder": "Search a passage, span or variant…",
+      "mentionNoResults": "No matches."
+    },
+    "mention": {
+      "PLACEMENT": "Span",
+      "PASSAGE": "Passage",
+      "VARIANT": "Variant",
+      "deadTarget": "This reference target no longer exists."
     }
   },
-  "scanUploader": {
+  "variants": {
+    "title": "Alternative versions",
+    "empty": "No alternative versions yet.",
+    "addVariant": "Add a version",
+    "labelField": "Label",
+    "labelPlaceholder": "e.g. Manuscript A, Editor's reading",
+    "textField": "Transcribed text",
+    "textPlaceholder": "Type or paste this version's text…",
+    "untitled": "Untitled version",
+    "noText": "No text transcribed.",
+    "scan": "Scan",
+    "chooseScan": "Choose a scan file (image or PDF)",
     "uploadScan": "Upload scan",
-    "uploading": "Uploading…",
-    "errors": {
-      "uploadFailed": "Upload failed",
-      "uploadFailedStatus": "Upload failed ({status})"
-    }
+    "viewScan": "View scan",
+    "hideScan": "Hide scan",
+    "noScan": "No scan attached.",
+    "scanAlt": "Scan of {label}",
+    "uploadFailed": "Upload failed",
+    "uploadFailedStatus": "Upload failed ({status})"
   },
   "errors": {
     "signInFailed": "Failed to sign in. Try again.",
     "emailRequired": "Email address must be provided.",
     "signUpFailed": "Failed to create account",
-    "referenceRequired": "Reference is required",
-    "texteNotFound": "Texte not found",
-    "tagLayerCodeRequired": "Layer and code are required",
-    "invalidSpan": "Invalid span",
+    "bookNotFound": "Book not found",
+    "bookTitleRequired": "A book title is required",
+    "passageNotFound": "Passage not found",
+    "passageNumberInvalid": "Invalid passage number or PDF region",
     "tagNotFound": "Tag not found",
-    "invalidScanKey": "Invalid scan key"
+    "tagNameRequired": "A tag name is required",
+    "tagTypeRequired": "A type is required for a root tag",
+    "tagParentInvalid": "Parent tag not found",
+    "placementNotFound": "Placement not found",
+    "invalidField": "A placement must target the title or the text",
+    "invalidSpan": "Invalid span",
+    "emptyPlacement": "Add at least one tag or a description",
+    "variantNotFound": "Variant not found",
+    "invalidScanKey": "Invalid scan key",
+    "invalidPdfKey": "Invalid PDF key",
+    "invalidPageCount": "Invalid page count",
+    "refSourceNotFound": "Reference source not found",
+    "refTargetNotFound": "Reference target not found",
+    "invalidTargetType": "Invalid reference target type",
+    "markInvalid": "Invalid mark position",
+    "markNotFound": "Mark not found",
+    "uploadFailed": "Upload failed",
+    "uploadFailedStatus": "Upload failed ({status})"
   }
 }

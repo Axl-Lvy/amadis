@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { renderWithIntl } from "@/test-utils/intl";
 
-const pathname = vi.fn(() => "/textes");
+const pathname = vi.fn(() => "/books");
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname(),
   useRouter: () => ({ refresh: vi.fn() }),
@@ -21,7 +21,7 @@ describe("AppShell", () => {
       </AppShell>,
     );
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Textes")).toBeInTheDocument();
+    expect(screen.getByText("Books")).toBeInTheDocument();
     expect(screen.getByText("Marie")).toBeInTheDocument();
     expect(screen.getByText("marie@example.com")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
@@ -29,14 +29,14 @@ describe("AppShell", () => {
   });
 
   it("marks the active route with aria-current", () => {
-    pathname.mockReturnValue("/textes/abc");
+    pathname.mockReturnValue("/books/abc");
     renderWithIntl(
       <AppShell user={{ name: "Marie", email: null }}>
         <span />
       </AppShell>,
     );
-    const textes = screen.getByRole("link", { name: /Textes/ });
-    expect(textes).toHaveAttribute("aria-current", "page");
+    const books = screen.getByRole("link", { name: /Books/ });
+    expect(books).toHaveAttribute("aria-current", "page");
     const dashboard = screen.getByRole("link", { name: /Dashboard/ });
     expect(dashboard).not.toHaveAttribute("aria-current");
   });
@@ -81,7 +81,7 @@ describe("AppShell", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     expect(container.querySelector(".sidebar")).toHaveAttribute("data-open", "true");
-    fireEvent.click(screen.getByText("Textes"));
+    fireEvent.click(screen.getByText("Books"));
     expect(container.querySelector(".sidebar")).toHaveAttribute("data-open", "false");
   });
 });

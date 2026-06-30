@@ -65,8 +65,8 @@ export default async function Home() {
 
         <div className="hero-cta">
           {session?.user ? (
-            <Link href="/textes" className="btn btn-primary" style={{ textDecoration: "none" }}>
-              {t("home.hero.openTextes")}
+            <Link href="/books" className="btn btn-primary" style={{ textDecoration: "none" }}>
+              {t("home.hero.openBooks")}
             </Link>
           ) : (
             <>

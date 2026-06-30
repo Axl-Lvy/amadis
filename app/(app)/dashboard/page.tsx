@@ -19,17 +19,19 @@ export default async function DashboardPage() {
   const t = await getTranslations("dashboard");
 
   // Per-user counts (every table is owner-scoped) plus the managed auth identity table.
-  const [texteCount, tagCount, annotationCount, authUsers] = await Promise.all([
-    prisma.texte.count({ where: { ownerId } }),
+  const [bookCount, passageCount, tagCount, placementCount, authUsers] = await Promise.all([
+    prisma.book.count({ where: { ownerId } }),
+    prisma.passage.count({ where: { ownerId } }),
     prisma.tag.count({ where: { ownerId } }),
-    prisma.annotation.count({ where: { ownerId } }),
+    prisma.placement.count({ where: { ownerId } }),
     prisma.$queryRaw<{ count: number }[]>`SELECT count(*)::int AS count FROM neon_auth."user"`,
   ]);
 
   const mine: [string, number][] = [
-    ["textes", texteCount],
+    ["books", bookCount],
+    ["passages", passageCount],
     ["tags", tagCount],
-    ["annotations", annotationCount],
+    ["placements", placementCount],
   ];
 
   return (
@@ -39,12 +41,12 @@ export default async function DashboardPage() {
           <h1>{t("title")}</h1>
           <p className="sub">{t("signedInAs", { name: session.user.name })}</p>
         </div>
-        <Link href="/textes" className="btn btn-primary" style={{ textDecoration: "none" }}>
-          {t("openMyTextes")}
+        <Link href="/books" className="btn btn-primary" style={{ textDecoration: "none" }}>
+          {t("openBooks")}
         </Link>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {mine.map(([name, count]) => (
           <section key={name} className="card flex flex-col gap-1">
             <p className="section-label">{t(`stats.${name}`)}</p>

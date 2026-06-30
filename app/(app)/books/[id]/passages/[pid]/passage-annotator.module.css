@@ -1,0 +1,522 @@
+/* Spectra passage annotator — interlinear colour lanes over a passage's title
+   and text folios. Adapted from the original textes annotator. Colour is keyed
+   by ROOT TAG TYPE; tagless (description-only) placements use a neutral lane. */
+
+/* ---------------- work area ---------------- */
+.work {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.folios {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.folio {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px 32px 24px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.03) inset,
+    0 24px 60px -34px rgba(0, 0, 0, 0.7);
+}
+.folio::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(90deg, var(--hue-1), var(--hue-2), var(--hue-3), var(--hue-4));
+  opacity: 0.9;
+}
+.eyebrow {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 16px;
+}
+.eyebrow b {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.verse {
+  font-family: var(--font-serif);
+  color: var(--foreground);
+  margin: 0;
+  white-space: normal;
+  cursor: text;
+}
+.verseTitle {
+  font-size: clamp(20px, 2.4vw, 28px);
+}
+.verseText {
+  font-size: clamp(18px, 2vw, 23px);
+}
+.vline {
+  display: block;
+}
+.vline + .vline {
+  margin-top: 2px;
+}
+.ln {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  color: var(--faint);
+  margin-right: 16px;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+  vertical-align: baseline;
+}
+
+/* a word never breaks mid-token; separators flow inline and allow wrapping */
+.word {
+  white-space: nowrap;
+}
+.cp {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+  vertical-align: baseline;
+  border-radius: 3px;
+  transition: background 0.18s, color 0.18s;
+}
+.cp.lit {
+  background: color-mix(in srgb, var(--litc) 22%, transparent);
+  color: var(--foreground);
+}
+.sep {
+  white-space: pre-wrap;
+}
+
+/* interlinear lane bars, drawn in the line's leading below each glyph */
+.bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--c);
+  box-shadow: var(--bar-glow);
+  transition: height 0.16s, box-shadow 0.16s, opacity 0.16s;
+}
+.bar.grow {
+  animation: grow 0.36s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  transform-origin: left center;
+}
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+.bar.lit {
+  height: 6px;
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--c) 40%, transparent),
+    0 0 12px -1px var(--c);
+}
+
+.empty {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.foot {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+/* ---------------- inspector ---------------- */
+.inspector {
+  position: sticky;
+  top: 92px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.inspectorHead {
+  margin: 0;
+}
+.chips {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.chip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--c);
+  border-radius: 10px;
+  padding: 10px 11px 10px 12px;
+  transition: box-shadow 0.16s, transform 0.16s, background 0.16s;
+}
+.chip:hover,
+.chip.lit {
+  background: var(--surface-2);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--c) 16%, transparent),
+    0 0 22px -10px var(--c);
+  transform: translateX(-2px);
+}
+.chipTop {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 10px;
+}
+.chipBody {
+  min-width: 0;
+}
+.chipSrc {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--foreground);
+  line-height: 1.25;
+}
+.fieldBadge {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  text-transform: uppercase;
+}
+.tagPaths {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tagPath {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 35%, transparent);
+  padding: 1px 6px;
+  border-radius: 5px;
+}
+.desc {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.descMention {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.descMention:hover {
+  border-color: var(--accent);
+}
+.descMentionDead {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.off {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 9.5px;
+  color: var(--faint);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.chipActions {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+.iconBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.iconBtn:hover {
+  color: var(--foreground);
+  border-color: var(--line-2);
+}
+.del:hover {
+  background: color-mix(in srgb, var(--hue-4) 18%, transparent);
+  color: var(--hue-4);
+  border-color: color-mix(in srgb, var(--hue-4) 40%, transparent);
+}
+.emptyInspector {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--muted);
+  font-size: 14px;
+  background: var(--surface);
+  border: 1px dashed var(--line-2);
+  border-radius: 10px;
+  padding: 16px;
+  line-height: 1.6;
+}
+
+/* ---------------- inscribe panel (selection / edit) ---------------- */
+.inscribe {
+  position: absolute;
+  z-index: 40;
+  margin: 0;
+  right: auto;
+  color: var(--pop-fg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(380px, 92vw);
+  background: var(--pop-bg);
+  border: 1px solid var(--pop-line);
+  border-radius: 14px;
+  padding: 13px;
+  box-shadow: 0 18px 46px -12px rgba(0, 0, 0, 0.6);
+}
+.inscribeHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.inscribeTitle {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--pop-fg) 60%, transparent);
+}
+.inscribeSrc {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  color: var(--pop-fg);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.descArea {
+  width: 100%;
+  min-height: 56px;
+  resize: vertical;
+  background: color-mix(in srgb, var(--pop-fg) 8%, transparent);
+  border: 1px solid var(--pop-line);
+  color: var(--pop-fg);
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  line-height: 1.45;
+}
+.descArea::placeholder {
+  color: color-mix(in srgb, var(--pop-fg) 45%, transparent);
+}
+.mentionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.mentionPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  padding: 3px 5px 3px 8px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--pop-fg);
+  max-width: 100%;
+}
+.mentionPill .lbl {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mentionPill button {
+  border: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--pop-fg) 70%, transparent);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+}
+.smallBtn {
+  border: 1px solid var(--pop-line);
+  background: color-mix(in srgb, var(--pop-fg) 8%, transparent);
+  color: var(--pop-fg);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.14s;
+}
+.smallBtn:hover {
+  background: color-mix(in srgb, var(--pop-fg) 14%, transparent);
+}
+
+/* mention search popover inside the panel */
+.mentionSearch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--pop-fg) 6%, transparent);
+  border: 1px solid var(--pop-line);
+  border-radius: 10px;
+}
+.mentionSearch input {
+  background: color-mix(in srgb, var(--pop-fg) 10%, transparent);
+  border: 1px solid var(--pop-line);
+  color: var(--pop-fg);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-family: inherit;
+  font-size: 12.5px;
+  outline: none;
+}
+.mentionResults {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.mentionResult {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--pop-fg);
+  cursor: pointer;
+  font-size: 12.5px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.mentionResult:hover {
+  background: color-mix(in srgb, var(--pop-fg) 12%, transparent);
+}
+.mentionResult .ctx {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--pop-fg) 55%, transparent);
+}
+.mentionResult .kind {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 80%, var(--pop-fg));
+}
+.panelActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.go {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 0 18px -5px var(--accent);
+  transition: filter 0.14s;
+}
+.go:hover {
+  filter: brightness(1.1);
+}
+.go:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.cancel {
+  border: 1px solid var(--pop-line);
+  background: transparent;
+  color: var(--pop-fg);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+}
+.panelError {
+  font-size: 12px;
+  color: var(--hue-4);
+  margin: 0;
+}
+
+/* host for the tag picker rendered inside the dark panel: it uses .field, whose
+   colours read fine on the pop surface, but we tighten spacing here */
+.pickerHost {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (max-width: 900px) {
+  .work {
+    grid-template-columns: 1fr;
+  }
+  .inspector {
+    position: static;
+  }
+  .inscribe {
+    width: min(380px, 96vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar.grow {
+    animation: none !important;
+  }
+}
