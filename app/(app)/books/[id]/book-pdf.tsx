@@ -3,9 +3,6 @@
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-
-let tmpMarkSeq = 0;
-
 import { PdfPages } from "@/app/_components/pdf-document";
 import type { PdfGeometry, PdfPoint } from "@/app/_components/pdf-document";
 import { areaBounds, columnTranslate, focus } from "@/lib/pdf-areas";
@@ -24,6 +21,8 @@ import {
   PassageAnnotator,
   type PlacementView,
 } from "./passages/[pid]/passage-annotator";
+
+let tmpMarkSeq = 0;
 
 export type PdfMark = { id: string; page: number; frac: number };
 export type PdfPassage = {
@@ -305,6 +304,20 @@ function MarkLayer({
         const top = geometry.pageTops[m.page - 1] + m.frac * geometry.pageHeights[m.page - 1];
         const left = geometry.pageLefts[m.page - 1];
         const width = geometry.pageWidths[m.page - 1];
+        const pending = m.id.startsWith("tmp-");
+
+        if (pending) {
+          // Optimistic mark: render only the boundary line, no drag or remove
+          return (
+            <div
+              key={m.id}
+              style={{ position: "absolute", left, top, width }}
+            >
+              <div style={{ borderTop: "2px solid var(--accent)" }} />
+            </div>
+          );
+        }
+
         return (
           <div
             key={m.id}
