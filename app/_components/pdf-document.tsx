@@ -120,7 +120,6 @@ export function PdfPages({ url, onPointClick, onGeometry, overlay }: Readonly<Pr
       cancelled = true;
       task?.destroy().catch(() => {});
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 
   // Re-measure on resize (uses the latest onGeometry via the ref).
@@ -130,7 +129,6 @@ export function PdfPages({ url, onPointClick, onGeometry, overlay }: Readonly<Pr
     const ro = new ResizeObserver(() => measure());
     ro.observe(pages);
     return () => ro.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Click-to-pick a point: frac from the clicked page's own rect.
